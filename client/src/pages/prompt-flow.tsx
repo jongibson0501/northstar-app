@@ -71,11 +71,10 @@ export default function PromptFlow() {
       }
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
       console.log('Sending milestone goal title:', goal.title);
-      const response = await apiRequest("POST", "/api/generate-milestones", {
+      const response = await apiRequest("POST", "/api/generate-plan", {
         goalId,
         goalTitle: goal.title, 
-        timeline: timelineToSend,
-        questionsAndAnswers: questions.map((q, i) => ({ question: q, answer: answers[i] }))
+        timeline: timelineToSend
       });
       return await response.json();
     },
