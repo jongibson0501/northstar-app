@@ -1,13 +1,65 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Target, CheckCircle, Clock, Activity } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { GoalWithMilestones } from "@shared/schema";
 
 export default function ProgressPage() {
+  const { toast } = useToast();
   const { data: goals, isLoading } = useQuery<GoalWithMilestones[]>({
     queryKey: ["/api/goals"],
+  });
+
+  const updateMilestoneMutation = useMutation({
+    mutationFn: async ({ milestoneId, isCompleted }: { milestoneId: number; isCompleted: boolean }) => {
+      const response = await apiRequest("PUT", `/api/milestones/${milestoneId}`, {
+        isCompleted,
+        completedAt: isCompleted ? new Date().toISOString() : null,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+      toast({
+        title: "Progress Updated",
+        description: "Milestone status updated successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update milestone. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateActionMutation = useMutation({
+    mutationFn: async ({ actionId, isCompleted }: { actionId: number; isCompleted: boolean }) => {
+      const response = await apiRequest("PUT", `/api/actions/${actionId}`, {
+        isCompleted,
+        completedAt: isCompleted ? new Date().toISOString() : null,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+      toast({
+        title: "Progress Updated",
+        description: "Activity status updated successfully!",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update activity. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const getGoalProgress = (goal: GoalWithMilestones) => {
@@ -202,6 +254,51 @@ export default function ProgressPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* All Milestones List */}
+              {goals && goals.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-800">All Milestones</h3>
+                  {goals.map((goal) => (
+                    <div key={goal.id} className="space-y-3">
+                      <h4 className="text-md font-medium text-gray-700">{goal.title}</h4>
+                      {goal.milestones.map((milestone) => (
+                        <Card key={milestone.id}>
+                          <CardContent className="p-3">
+                            <div className="flex items-start gap-3">
+                              <Checkbox
+                                checked={milestone.isCompleted || false}
+                                onCheckedChange={(checked) => {
+                                  updateMilestoneMutation.mutate({
+                                    milestoneId: milestone.id,
+                                    isCompleted: checked === true,
+                                  });
+                                }}
+                                disabled={updateMilestoneMutation.isPending}
+                              />
+                              <div className="flex-1">
+                                <p className={`text-sm font-medium ${milestone.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                  {milestone.title}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {milestone.actions.filter(a => a.isCompleted).length} of {milestone.actions.length} activities completed
+                                </p>
+                              </div>
+                              <div className={`px-2 py-1 rounded-full text-xs ${
+                                milestone.isCompleted 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-orange-100 text-orange-700'
+                              }`}>
+                                {milestone.isCompleted ? 'Complete' : 'In Progress'}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Activities Tab */}
@@ -260,13 +357,16 @@ export default function ProgressPage() {
                       <Card key={action.id}>
                         <CardContent className="p-3">
                           <div className="flex items-start gap-3">
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
-                              action.isCompleted 
-                                ? 'bg-green-500 border-green-500' 
-                                : 'border-gray-300'
-                            }`}>
-                              {action.isCompleted && <CheckCircle className="w-3 h-3 text-white" />}
-                            </div>
+                            <Checkbox
+                              checked={action.isCompleted || false}
+                              onCheckedChange={(checked) => {
+                                updateActionMutation.mutate({
+                                  actionId: action.id,
+                                  isCompleted: checked === true,
+                                });
+                              }}
+                              disabled={updateActionMutation.isPending}
+                            />
                             <div className="flex-1">
                               <p className={`text-sm ${action.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
                                 {action.title}
