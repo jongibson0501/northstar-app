@@ -185,7 +185,7 @@ Return only a JSON object with a "questions" array containing exactly 5 simple q
         const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
         res.json(result);
       } catch (aiError: any) {
-        console.error("OpenAI API error:", aiError);
+        console.error("OpenAI API error details:", aiError.message, aiError.status, aiError.type);
         // Use fallback for any OpenAI error (rate limit, invalid key, etc.)
         const questions = generateContextualQuestions(goalTitle, timeline);
         res.json({ questions });
