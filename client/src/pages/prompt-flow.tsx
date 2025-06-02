@@ -66,13 +66,15 @@ export default function PromptFlow() {
 
   const generateMilestonesMutation = useMutation({
     mutationFn: async () => {
+      // Wait for goal to be loaded
       if (!goal?.title) {
-        throw new Error('Goal not loaded yet');
+        console.log('Goal not loaded, current goal:', goal);
+        throw new Error('Goal data is still loading. Please try again in a moment.');
       }
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
-      console.log('Sending milestone goal title:', goal.title);
+      console.log('Sending plan generation request:', { goalId, goalTitle: goal.title, timeline: timelineToSend });
       const response = await apiRequest("POST", "/api/generate-plan", {
-        goalId,
+        goalId: Number(goalId),
         goalTitle: goal.title, 
         timeline: timelineToSend
       });
@@ -280,7 +282,7 @@ export default function PromptFlow() {
 
             <Button
               onClick={handleTimelineSelection}
-              disabled={!selectedTimeline || isGeneratingQuestions}
+              disabled={!selectedTimeline || isGeneratingQuestions || !goal?.title}
               className="w-full bg-primary hover:bg-primary/90 text-white py-4"
             >
               {isGeneratingQuestions ? (
