@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Target, CheckCircle, Clock, Activity } from "lucide-react";
+import { Target, CheckCircle, Clock, Activity } from "lucide-react";
 import type { GoalWithMilestones } from "@shared/schema";
 
 export default function ProgressPage() {
@@ -34,22 +34,30 @@ export default function ProgressPage() {
     );
   };
 
-  const getTotalActionsCount = () => {
-    if (!goals) return 0;
-    return goals.reduce((total, goal) => 
-      total + goal.milestones.reduce((milestoneTotal, milestone) => 
-        milestoneTotal + milestone.actions.length, 0
-      ), 0
-    );
-  };
-
-  const getCompletedActionsCount = () => {
-    if (!goals) return 0;
-    return goals.reduce((total, goal) => 
-      total + goal.milestones.reduce((milestoneTotal, milestone) => 
-        milestoneTotal + milestone.actions.filter(a => a.isCompleted).length, 0
-      ), 0
-    );
+  const getCurrentMilestone = () => {
+    if (!goals || goals.length === 0) return null;
+    
+    // Find the first incomplete milestone from the most recently updated goal
+    const sortedGoals = [...goals].sort((a, b) => {
+      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return dateB - dateA;
+    });
+    
+    for (const goal of sortedGoals) {
+      const incompleteMilestone = goal.milestones.find(m => !m.isCompleted);
+      if (incompleteMilestone) {
+        return { milestone: incompleteMilestone, goalTitle: goal.title };
+      }
+    }
+    
+    // If all milestones are complete, return the last milestone from the most recent goal
+    if (sortedGoals[0]?.milestones.length > 0) {
+      const lastMilestone = sortedGoals[0].milestones[sortedGoals[0].milestones.length - 1];
+      return { milestone: lastMilestone, goalTitle: sortedGoals[0].title };
+    }
+    
+    return null;
   };
 
   if (isLoading) {
@@ -63,8 +71,7 @@ export default function ProgressPage() {
   const completedGoals = getCompletedGoalsCount();
   const totalMilestones = getTotalMilestonesCount();
   const completedMilestones = getCompletedMilestonesCount();
-  const totalActions = getTotalActionsCount();
-  const completedActions = getCompletedActionsCount();
+  const currentMilestoneData = getCurrentMilestone();
 
   return (
     <div className="min-h-screen bg-background text-secondary pb-20">
@@ -199,43 +206,88 @@ export default function ProgressPage() {
 
             {/* Activities Tab */}
             <TabsContent value="activities" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Activity className="w-5 h-5 text-blue-500" />
-                    Activity Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-gray-800 mb-2">
-                        {completedActions} / {totalActions}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">Activities Completed</p>
-                      <Progress value={totalActions > 0 ? (completedActions / totalActions) * 100 : 0} className="h-3" />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                          <span className="text-lg font-semibold">{completedActions}</span>
+              {currentMilestoneData ? (
+                <>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Activity className="w-5 h-5 text-blue-500" />
+                        Current Milestone Activities
+                      </CardTitle>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {currentMilestoneData.goalTitle} - {currentMilestoneData.milestone.title}
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-gray-800 mb-2">
+                            {currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length} / {currentMilestoneData.milestone.actions.length}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-4">Activities Completed</p>
+                          <Progress 
+                            value={currentMilestoneData.milestone.actions.length > 0 ? 
+                              (currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length / currentMilestoneData.milestone.actions.length) * 100 : 0} 
+                            className="h-3" 
+                          />
                         </div>
-                        <p className="text-xs text-gray-600">Completed</p>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-orange-500 mr-1" />
-                          <span className="text-lg font-semibold">{totalActions - completedActions}</span>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-center">
+                              <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                              <span className="text-lg font-semibold">{currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length}</span>
+                            </div>
+                            <p className="text-xs text-gray-600">Completed</p>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-center">
+                              <Clock className="w-4 h-4 text-orange-500 mr-1" />
+                              <span className="text-lg font-semibold">{currentMilestoneData.milestone.actions.length - currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length}</span>
+                            </div>
+                            <p className="text-xs text-gray-600">Remaining</p>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-600">Remaining</p>
                       </div>
-                    </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Individual Activities List */}
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-800">Activities</h3>
+                    {currentMilestoneData.milestone.actions.map((action, index) => (
+                      <Card key={action.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                              action.isCompleted 
+                                ? 'bg-green-500 border-green-500' 
+                                : 'border-gray-300'
+                            }`}>
+                              {action.isCompleted && <CheckCircle className="w-3 h-3 text-white" />}
+                            </div>
+                            <div className="flex-1">
+                              <p className={`text-sm ${action.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                {action.title}
+                              </p>
+                            </div>
+                            <span className="text-xs text-gray-500">{index + 1}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">No Current Milestone</h3>
+                    <p className="text-gray-600">Create a goal and start planning to see activities here!</p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
 
