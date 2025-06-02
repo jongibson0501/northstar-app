@@ -133,7 +133,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/actions/:id', isAuthenticated, async (req: any, res) => {
     try {
       const actionId = parseInt(req.params.id);
-      const updates = insertActionSchema.partial().parse(req.body);
+      // Handle date conversion for completedAt field
+      const requestData = { ...req.body };
+      if (requestData.completedAt && typeof requestData.completedAt === 'string') {
+        requestData.completedAt = new Date(requestData.completedAt);
+      }
+      const updates = insertActionSchema.partial().parse(requestData);
       const action = await storage.updateAction(actionId, updates);
       res.json(action);
     } catch (error) {
