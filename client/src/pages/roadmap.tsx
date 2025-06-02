@@ -105,7 +105,7 @@ export default function Roadmap() {
                 <p className="text-sm text-gray-600 mt-1">
                   Target: {goal.timeline === "3_months" ? "3 months" : 
                           goal.timeline === "6_months" ? "6 months" : "1 year"} • {" "}
-                  {goal.milestones.length} milestones
+                  {goal.milestones ? goal.milestones.length : 0} milestones
                 </p>
               </CardContent>
             </Card>
@@ -210,7 +210,7 @@ export default function Roadmap() {
                 ></div>
               </div>
               <div className="flex justify-between text-sm text-gray-600 mt-2">
-                <span>{completedMilestones} of {goal.milestones.length} milestones completed</span>
+                <span>{completedMilestones} of {goal.milestones ? goal.milestones.length : 0} milestones completed</span>
                 <span>
                   {goal.timeline === "3_months" ? "3 months" : 
                    goal.timeline === "6_months" ? "6 months" : "12 months"} total
