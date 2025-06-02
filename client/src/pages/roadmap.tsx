@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Check } from "lucide-react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
@@ -12,6 +12,7 @@ import type { GoalWithMilestones } from "@shared/schema";
 
 export default function Roadmap() {
   const [, params] = useRoute("/goals/:id");
+  const [, setLocation] = useLocation();
   const goalId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
 
@@ -84,7 +85,7 @@ export default function Roadmap() {
   }
 
   const progress = calculateProgress();
-  const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
+  const completedMilestones = goal.milestones ? goal.milestones.filter(m => m.isCompleted).length : 0;
 
   return (
     <div className="min-h-screen bg-background text-secondary pb-20">
@@ -112,11 +113,13 @@ export default function Roadmap() {
 
           {/* Timeline Visualization */}
           <div className="relative mb-8">
-            {/* Timeline Line */}
-            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-300"></div>
-            
-            {goal.milestones.map((milestone, index) => (
-              <div key={milestone.id} className="relative mb-8 last:mb-0">
+            {goal.milestones && goal.milestones.length > 0 ? (
+              <>
+                {/* Timeline Line */}
+                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-300"></div>
+                
+                {goal.milestones.map((milestone, index) => (
+                  <div key={milestone.id} className="relative mb-8 last:mb-0">
                 {/* Timeline Dot */}
                 <div className={`absolute left-6 w-4 h-4 rounded-full border-4 border-white shadow-sm ${
                   milestone.isCompleted ? 'bg-accent' : 'bg-gray-300'
@@ -154,9 +157,9 @@ export default function Roadmap() {
                       {milestone.actions.map((action) => (
                         <div key={action.id} className="flex items-center space-x-3">
                           <Checkbox
-                            checked={action.isCompleted}
+                            checked={action.isCompleted || false}
                             onCheckedChange={(checked) => 
-                              toggleAction(action.id, checked as boolean)
+                              toggleAction(action.id, !!checked)
                             }
                             className="w-4 h-4"
                           />
@@ -179,6 +182,18 @@ export default function Roadmap() {
                 </div>
               </div>
             ))}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 mb-4">No milestones planned yet</p>
+                <Button
+                  onClick={() => setLocation(`/goals/${goalId}/plan`)}
+                  className="bg-primary text-white hover:bg-primary/90"
+                >
+                  Plan Milestones
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Progress Summary */}
