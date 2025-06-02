@@ -248,28 +248,56 @@ Return only a JSON object with a "questions" array containing exactly 5 simple q
   app.post('/api/generate-milestones', isAuthenticated, async (req: any, res) => {
     try {
       const { goalTitle, timeline, questionsAndAnswers } = req.body;
+      console.log('Milestone generation request:', { goalTitle, timeline, questionsAndAnswers });
       
-      const timelineMonths = timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
+      // Parse timeline properly
+      let timelineMonths;
+      let timelineText;
+      if (timeline.includes('month')) {
+        timelineMonths = parseInt(timeline.replace(/\D/g, '')) || 12;
+        timelineText = timeline;
+      } else if (timeline.includes('year')) {
+        timelineMonths = parseInt(timeline.replace(/\D/g, '')) * 12 || 12;
+        timelineText = timeline;
+      } else {
+        // Handle predefined timeline values
+        timelineMonths = timeline === "1_month" ? 1 : timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
+        timelineText = timeline.replace('_', ' ');
+      }
+      
       const qaText = questionsAndAnswers.map((qa: any) => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
       
       // Try AI first, fallback to contextual milestones if quota exceeded
       try {
-        const prompt = `Based on the goal "${goalTitle}" to be achieved in ${timelineMonths} months and these user responses:
+        const prompt = `Create a specific, actionable roadmap for the goal: "${goalTitle}" to be achieved in ${timelineText}.
 
+User context:
 ${qaText}
 
-Create a detailed roadmap with milestones covering: Week 1, Month 1, Month 3, Month 6, Month 9, and Month 12 (adjust to fit ${timelineMonths} month timeline).
+Generate exactly 6 progressive milestones with these specific timeframes:
+1. Week 1 - Immediate start actions
+2. Month 1 - Early momentum building  
+3. Month 3 - Skill development phase
+4. Month 6 - Intermediate progress
+5. Month 9 - Advanced application
+6. Month 12 - Goal completion and mastery
 
-Each milestone should have:
-- Clear, specific title
-- Target timeframe (week 1, month 1, 3, 6, 9, or 12)
-- 3-5 concrete, actionable steps
+For language learning specifically, include:
+- Week 1: Setup learning environment, first lessons
+- Month 1: Basic vocabulary and grammar foundation
+- Month 3: Conversational practice begins
+- Month 6: Intermediate proficiency
+- Month 9: Advanced conversations and media
+- Month 12: Near-fluency and practical application
 
-Start with immediate actions in week 1, then build momentum through month 1, then set larger goals for 3, 6, 9, and 12 months.
+Each milestone needs:
+- Specific title describing what they'll achieve
+- timeframe: "Week 1", "Month 1", "Month 3", "Month 6", "Month 9", or "Month 12"
+- 3-5 concrete actions with specific, measurable steps
 
-Return JSON with "milestones" array. Each milestone has: title, targetMonth (use 0.25 for week 1, 1 for month 1, etc), and actions array with title field.
+Return JSON: {"milestones": [{"title": "...", "timeframe": "Week 1", "actions": [{"title": "..."}]}]}
 
-Make it specific to their answers and progressively challenging.`;
+Make every action specific to ${goalTitle} with clear, achievable steps.`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -369,36 +397,94 @@ Make it specific to their answers and progressively challenging.`;
     
     // Learning goals
     if (goal.includes('learn') || goal.includes('study') || goal.includes('skill') || goal.includes('language')) {
-      return [
+      const milestones = [
         {
-          title: "Master Fundamentals",
-          targetMonth: Math.ceil(timelineMonths/3),
+          title: "Set Up Learning Foundation",
+          timeframe: "Week 1",
           actions: [
-            { title: "Complete basic course or tutorial series" },
-            { title: "Practice daily for 30-60 minutes" },
-            { title: "Join community or find study partner" }
+            { title: "Choose primary learning resource (app, course, or textbook)" },
+            { title: "Set up daily 15-30 minute study schedule" },
+            { title: "Learn basic greetings and essential phrases" },
+            { title: "Download language learning apps and create accounts" }
           ]
         },
         {
-          title: "Apply Knowledge Through Projects",
-          targetMonth: Math.ceil(timelineMonths*2/3),
+          title: "Build Core Vocabulary",
+          timeframe: "Month 1",
           actions: [
-            { title: "Start hands-on project using new skills" },
-            { title: "Seek feedback from experienced practitioners" },
-            { title: "Document learning progress and challenges" }
+            { title: "Master 100-150 essential words" },
+            { title: "Complete beginner grammar lessons" },
+            { title: "Practice pronunciation daily" },
+            { title: "Start simple sentence construction" }
           ]
         },
         {
-          title: "Achieve Proficiency",
-          targetMonth: timelineMonths,
+          title: "Begin Conversational Practice",
+          timeframe: "Month 3",
           actions: [
-            { title: "Complete advanced project or assessment" },
-            { title: "Share knowledge by teaching or mentoring others" },
-            { title: "Plan next level of learning and development" }
+            { title: "Expand vocabulary to 500+ words" },
+            { title: "Practice speaking with language exchange partner" },
+            { title: "Listen to simple audio content daily" },
+            { title: "Write short paragraphs about daily activities" }
           ]
         }
       ];
+      
+      if (timelineMonths >= 6) {
+        milestones.push({
+          title: "Intermediate Proficiency",
+          timeframe: "Month 6",
+          actions: [
+            { title: "Hold 10-minute conversations on familiar topics" },
+            { title: "Read simple articles or children's books" },
+            { title: "Know 1000+ vocabulary words" },
+            { title: "Use past and future tenses confidently" }
+          ]
+        });
+      }
+      
+      if (timelineMonths >= 9) {
+        milestones.push({
+          title: "Advanced Application",
+          timeframe: "Month 9",
+          actions: [
+            { title: "Watch movies or shows with subtitles" },
+            { title: "Participate in online forums or communities" },
+            { title: "Express opinions and discuss complex topics" },
+            { title: "Start reading intermediate level books" }
+          ]
+        });
+      }
+      
+      if (timelineMonths >= 12) {
+        milestones.push({
+          title: "Near-Fluency Achievement",
+          timeframe: "Month 12",
+          actions: [
+            { title: "Conduct business or academic conversations" },
+            { title: "Write essays or formal documents" },
+            { title: "Understand native speakers at normal speed" },
+            { title: "Plan trip to country where language is spoken" }
+          ]
+        });
+      }
+      
+      return milestones;
     }
+    
+    // Default fallback milestone structure
+    return [
+      {
+        title: "Get Started",
+        timeframe: "Week 1",
+        actions: [
+          { title: "Set up initial plan and resources" },
+          { title: "Take first concrete steps" },
+          { title: "Establish routine or schedule" }
+        ]
+      }
+    ];
+  }
     
     // Generic milestones for other goals
     return [

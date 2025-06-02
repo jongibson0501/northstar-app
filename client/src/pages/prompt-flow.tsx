@@ -405,7 +405,7 @@ export default function PromptFlow() {
                   <CardContent className="p-4">
                     <div className="mb-3">
                       <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Milestone {index + 1} (Month {milestone.targetMonth})
+                        Milestone {index + 1} ({milestone.timeframe || `Month ${milestone.targetMonth}`})
                       </label>
                       <Input
                         value={milestone.title}
