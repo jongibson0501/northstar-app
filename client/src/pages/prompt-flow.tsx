@@ -211,7 +211,7 @@ export default function PromptFlow() {
           <div className="p-4 space-y-6">
             <div>
               <h2 className="text-xl font-medium text-gray-800 mb-2">
-                How long do you want to work on "{goal.title}"?
+                How long do you want to work on "{goal?.title || 'your goal'}"?
               </h2>
               <p className="text-gray-600 mb-6">
                 Choose a realistic timeline that fits your schedule and commitment level.
