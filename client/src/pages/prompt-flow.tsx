@@ -108,7 +108,7 @@ export default function PromptFlow() {
   });
 
   const handleTimelineSelection = () => {
-    if (!selectedTimeline || !goal?.title) return;
+    if (!selectedTimeline) return;
     setIsGeneratingQuestions(true);
     generateQuestionsMutation.mutate();
   };
@@ -213,16 +213,15 @@ export default function PromptFlow() {
               <h2 className="text-xl font-medium text-gray-800 mb-2">
                 How long do you want to work on {goal.title ? goal.title.toLowerCase() : 'your goal'}?
               </h2>
-              <p className="text-gray-600 mb-6">
-                Choose a realistic timeline that fits your schedule and commitment level.
-              </p>
             </div>
 
             <div className="space-y-3">
               {[
-                { value: "3_months", label: "3 Months", desc: "Intensive, focused approach" },
-                { value: "6_months", label: "6 Months", desc: "Balanced progress with flexibility" },
-                { value: "1_year", label: "1 Year", desc: "Gradual, sustainable development" },
+                { value: "1_month", label: "1 Month" },
+                { value: "3_months", label: "3 Months" },
+                { value: "6_months", label: "6 Months" },
+                { value: "1_year", label: "1 Year" },
+                { value: "custom", label: "Custom" },
               ].map((option) => (
                 <Card
                   key={option.value}
@@ -248,7 +247,6 @@ export default function PromptFlow() {
                       </div>
                       <div>
                         <h3 className="font-medium text-gray-800">{option.label}</h3>
-                        <p className="text-sm text-gray-600">{option.desc}</p>
                       </div>
                     </div>
                   </CardContent>
