@@ -84,7 +84,7 @@ export default function PromptFlow() {
       console.log('Plan generation successful:', data);
       if (data.success) {
         // Redirect to roadmap page after successful generation
-        window.location.href = `/roadmap/${goalId}`;
+        window.location.href = `/goals/${goalId}`;
       } else {
         setMilestones(data.milestones || []);
         setCurrentStep(4);
