@@ -19,6 +19,7 @@ export default function PromptFlow() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedTimeline, setSelectedTimeline] = useState("");
+  const [customTimeline, setCustomTimeline] = useState("");
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -34,9 +35,10 @@ export default function PromptFlow() {
 
   const generateQuestionsMutation = useMutation({
     mutationFn: async () => {
+      const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
       const response = await apiRequest("POST", "/api/generate-questions", {
-        goalTitle: goal?.title,
-        timeline: selectedTimeline
+        goalTitle: goal?.title || "personal goal",
+        timeline: timelineToSend
       });
       return await response.json();
     },
@@ -109,8 +111,12 @@ export default function PromptFlow() {
 
   const handleTimelineSelection = () => {
     if (!selectedTimeline) return;
-    setIsGeneratingQuestions(true);
-    generateQuestionsMutation.mutate();
+    if (selectedTimeline === "custom") {
+      setCurrentStep(2);
+    } else {
+      setIsGeneratingQuestions(true);
+      generateQuestionsMutation.mutate();
+    }
   };
 
   const handleAnswerChange = (value: string) => {
@@ -268,6 +274,56 @@ export default function PromptFlow() {
                 "Continue"
               )}
             </Button>
+          </div>
+        )}
+
+        {/* Step 2: Custom Timeline Input */}
+        {currentStep === 2 && (
+          <div className="p-4 space-y-6">
+            <div>
+              <h2 className="text-xl font-medium text-gray-800 mb-2">
+                What's your custom timeline?
+              </h2>
+            </div>
+
+            <div>
+              <input
+                type="text"
+                value={customTimeline}
+                onChange={(e) => setCustomTimeline(e.target.value)}
+                placeholder="e.g., 2 weeks, 8 months, 2 years..."
+                className="w-full p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                onClick={() => setCurrentStep(1)}
+                variant="outline"
+                className="flex-1"
+              >
+                Back
+              </Button>
+              <Button
+                onClick={() => {
+                  if (customTimeline.trim()) {
+                    setIsGeneratingQuestions(true);
+                    generateQuestionsMutation.mutate();
+                  }
+                }}
+                disabled={!customTimeline.trim() || isGeneratingQuestions}
+                className="flex-1 bg-primary hover:bg-primary/90 text-white"
+              >
+                {isGeneratingQuestions ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating Questions...
+                  </>
+                ) : (
+                  "Continue"
+                )}
+              </Button>
+            </div>
           </div>
         )}
 
