@@ -39,15 +39,48 @@ export default function ProgressPage() {
   });
 
   const updateActionMutation = useMutation({
-    mutationFn: async ({ actionId, isCompleted }: { actionId: number; isCompleted: boolean }) => {
+    mutationFn: async ({ actionId, isCompleted, milestoneId }: { actionId: number; isCompleted: boolean; milestoneId?: number }) => {
       const response = await apiRequest("PUT", `/api/actions/${actionId}`, {
         isCompleted,
         completedAt: isCompleted ? new Date().toISOString() : null,
       });
-      return response.json();
+      return { action: response.json(), milestoneId, actionId, isCompleted };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+    onSuccess: async (result, variables) => {
+      // Refresh the goals data and wait for it to complete
+      await queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+      
+      // If we just completed an action, check milestone completion after a brief delay
+      if (variables.isCompleted && variables.milestoneId) {
+        setTimeout(async () => {
+          // Get fresh data to check milestone completion
+          const freshGoals = queryClient.getQueryData<GoalWithMilestones[]>(["/api/goals"]);
+          if (freshGoals) {
+            const goal = freshGoals.find(g => g.milestones.some(m => m.id === variables.milestoneId));
+            if (goal) {
+              const milestone = goal.milestones.find(m => m.id === variables.milestoneId);
+              if (milestone && !milestone.isCompleted) {
+                // Check if all actions in this milestone are now completed
+                const allActionsCompleted = milestone.actions.every(action => action.isCompleted);
+                
+                if (allActionsCompleted) {
+                  // Auto-complete the milestone
+                  updateMilestoneMutation.mutate({
+                    milestoneId: milestone.id,
+                    isCompleted: true,
+                  });
+                  toast({
+                    title: "Milestone Completed!",
+                    description: `Great job! You've completed "${milestone.title}". Moving to the next milestone.`,
+                  });
+                  return;
+                }
+              }
+            }
+          }
+        }, 500); // Small delay to ensure data is refreshed
+      }
+      
       toast({
         title: "Progress Updated",
         description: "Activity status updated successfully!",
@@ -363,6 +396,7 @@ export default function ProgressPage() {
                                 updateActionMutation.mutate({
                                   actionId: action.id,
                                   isCompleted: checked === true,
+                                  milestoneId: currentMilestoneData.milestone.id,
                                 });
                               }}
                               disabled={updateActionMutation.isPending}
