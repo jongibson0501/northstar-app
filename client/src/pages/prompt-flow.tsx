@@ -125,7 +125,8 @@ export default function PromptFlow() {
       setCurrentStep(2);
     } else {
       setIsGeneratingQuestions(true);
-      generatePlanMutation.mutate();
+      console.log('Starting plan generation with timeline:', selectedTimeline);
+      generateMilestonesMutation.mutate();
     }
   };
 
