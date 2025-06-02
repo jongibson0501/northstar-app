@@ -524,6 +524,7 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
           targetMonth: targetMonth,
           orderIndex: i,
           isCompleted: false,
+          completedAt: null,
         });
         
         // Save actions for this milestone
@@ -535,6 +536,7 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
             description: "",
             orderIndex: j,
             isCompleted: false,
+            completedAt: null,
           });
         }
       }
