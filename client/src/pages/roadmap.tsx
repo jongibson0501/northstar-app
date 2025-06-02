@@ -42,6 +42,32 @@ export default function Roadmap() {
     },
   });
 
+  const clearPlanMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", `/api/goals/${goalId}/plan`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Plan Cleared",
+        description: "Your plan has been cleared. Creating a new one...",
+      });
+      // Redirect to planning flow
+      setLocation(`/goals/${goalId}/plan`);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to clear plan. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const clearAndRegeneratePlan = () => {
+    clearPlanMutation.mutate();
+  };
+
   const calculateProgress = () => {
     if (!goal?.milestones || goal.milestones.length === 0) return 0;
     const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
@@ -94,9 +120,14 @@ export default function Roadmap() {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-medium text-gray-800">Your Roadmap</h2>
-              <Button variant="ghost" size="sm" className="text-primary text-sm font-medium">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-primary text-sm font-medium"
+                onClick={() => clearAndRegeneratePlan()}
+              >
                 <Edit className="w-4 h-4 mr-1" />
-                Edit
+                Regenerate Plan
               </Button>
             </div>
             <Card className="bg-primary/10 border-primary/20">

@@ -154,6 +154,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear existing plan and allow regeneration
+  app.delete('/api/goals/:id/plan', isAuthenticated, async (req: any, res) => {
+    try {
+      const goalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      // Get the goal to verify ownership
+      const goal = await storage.getGoal(goalId);
+      if (!goal || goal.userId !== userId) {
+        return res.status(404).json({ message: "Goal not found" });
+      }
+      
+      // Delete all milestones and actions for this goal
+      for (const milestone of goal.milestones) {
+        for (const action of milestone.actions) {
+          await storage.deleteAction(action.id);
+        }
+        await storage.deleteMilestone(milestone.id);
+      }
+      
+      res.json({ success: true, message: "Plan cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing plan:", error);
+      res.status(500).json({ message: "Failed to clear plan" });
+    }
+  });
+
   // Helper function for fallback plan generation
   function generateContextualPlan(goalTitle: string, timeline: string): any[] {
     const timelineMonths = timeline === "1_month" ? 1 : timeline === "3_months" ? 3 : 6;
