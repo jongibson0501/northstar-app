@@ -15,6 +15,9 @@ export default function Roadmap() {
   const [, setLocation] = useLocation();
   const goalId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
+  
+  console.log('Roadmap params:', params);
+  console.log('Roadmap goalId:', goalId);
 
   const { data: goal, isLoading } = useQuery<GoalWithMilestones>({
     queryKey: ["/api/goals", goalId],
