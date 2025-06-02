@@ -109,7 +109,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/milestones/:id', isAuthenticated, async (req: any, res) => {
     try {
       const milestoneId = parseInt(req.params.id);
-      const updates = insertMilestoneSchema.partial().parse(req.body);
+      
+      // Convert completedAt string to Date if present
+      const body = { ...req.body };
+      if (body.completedAt && typeof body.completedAt === 'string') {
+        body.completedAt = new Date(body.completedAt);
+      }
+      
+      const updates = insertMilestoneSchema.partial().parse(body);
       const milestone = await storage.updateMilestone(milestoneId, updates);
       res.json(milestone);
     } catch (error) {
