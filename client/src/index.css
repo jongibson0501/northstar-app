@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 250 250 250; /* #FAFAFA */
+  --foreground: 60 9% 15%; /* #424242 */
+  --muted: 0 0% 96%; /* #F5F5F5 */
+  --muted-foreground: 0 0% 45%; /* #737373 */
+  --popover: 0 0% 100%; /* #FFFFFF */
+  --popover-foreground: 60 9% 15%; /* #424242 */
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 60 9% 15%; /* #424242 */
+  --border: 0 0% 90%; /* #E5E5E5 */
+  --input: 0 0% 90%; /* #E5E5E5 */
+  --primary: 207 90% 54%; /* #1976D2 */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 0 0% 96%; /* #F5F5F5 */
+  --secondary-foreground: 60 9% 15%; /* #424242 */
+  --accent: 16 90% 62%; /* #FF7043 */
+  --accent-foreground: 0 0% 100%; /* #FFFFFF */
+  --destructive: 0 84% 60%; /* #F44336 */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+  --success: 123 46% 55%; /* #4CAF50 */
+  --ring: 207 90% 54%; /* #1976D2 */
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 4%; /* #0A0A0B */
+  --foreground: 0 0% 95%; /* #F2F2F2 */
+  --muted: 240 4% 16%; /* #26262A */
+  --muted-foreground: 240 5% 65%; /* #A1A1AA */
+  --popover: 240 10% 4%; /* #0A0A0B */
+  --popover-foreground: 0 0% 95%; /* #F2F2F2 */
+  --card: 240 10% 4%; /* #0A0A0B */
+  --card-foreground: 0 0% 95%; /* #F2F2F2 */
+  --border: 240 4% 16%; /* #26262A */
+  --input: 240 4% 16%; /* #26262A */
+  --primary: 207 90% 54%; /* #1976D2 */
+  --primary-foreground: 0 0% 100%; /* #FFFFFF */
+  --secondary: 240 4% 16%; /* #26262A */
+  --secondary-foreground: 0 0% 95%; /* #F2F2F2 */
+  --accent: 16 90% 62%; /* #FF7043 */
+  --accent-foreground: 0 0% 100%; /* #FFFFFF */
+  --destructive: 0 84% 60%; /* #F44336 */
+  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
+  --success: 123 46% 55%; /* #4CAF50 */
+  --ring: 207 90% 54%; /* #1976D2 */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom styles for mobile-first design */
+.primary {
+  color: hsl(var(--primary));
+}
+
+.primary-dark {
+  color: hsl(207 90% 48%); /* #1565C0 */
+}
+
+.secondary {
+  color: hsl(var(--foreground));
+}
+
+.accent {
+  color: hsl(var(--accent));
+}
+
+.success {
+  color: hsl(var(--success));
+}
+
+.surface {
+  background-color: hsl(var(--card));
+}
+
+.background {
+  background-color: hsl(var(--background));
+}
