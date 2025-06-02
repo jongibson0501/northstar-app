@@ -76,7 +76,7 @@ export default function PromptFlow() {
       const timelineMonths = selectedTimeline === "3_months" ? 3 : 
                            selectedTimeline === "6_months" ? 6 : 12;
       
-      const suggestedMilestones = generateMilestones(goal.description, timelineMonths);
+      const suggestedMilestones = generateMilestones(goal.title, timelineMonths);
       setMilestones(suggestedMilestones);
     }
   }, [goal, selectedTimeline]);
