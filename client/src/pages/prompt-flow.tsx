@@ -33,29 +33,31 @@ export default function PromptFlow() {
     enabled: !!goalId,
   });
 
-  const generateQuestionsMutation = useMutation({
+  const generatePlanMutation = useMutation({
     mutationFn: async () => {
       if (!goal?.title) {
         throw new Error('Goal not loaded yet');
       }
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
-      console.log('Sending goal title:', goal.title);
-      const response = await apiRequest("POST", "/api/generate-questions", {
+      console.log('Generating plan for:', goal.title);
+      const response = await apiRequest("POST", "/api/generate-plan", {
+        goalId: goalId,
         goalTitle: goal.title,
         timeline: timelineToSend
       });
       return await response.json();
     },
-    onSuccess: (data) => {
-      setQuestions(data.questions);
-      setAnswers(new Array(data.questions.length).fill(""));
-      setCurrentStep(3);
-      setIsGeneratingQuestions(false);
+    onSuccess: () => {
+      toast({
+        title: "Plan Created!",
+        description: "Your personalized roadmap has been generated.",
+      });
+      setLocation("/");
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to generate questions. Please try again.",
+        description: "Failed to generate plan. Please try again.",
         variant: "destructive",
       });
       setIsGeneratingQuestions(false);
@@ -124,7 +126,7 @@ export default function PromptFlow() {
       setCurrentStep(2);
     } else {
       setIsGeneratingQuestions(true);
-      generateQuestionsMutation.mutate();
+      generatePlanMutation.mutate();
     }
   };
 
@@ -277,7 +279,7 @@ export default function PromptFlow() {
               {isGeneratingQuestions ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Generating Questions...
+                  Creating Your Plan...
                 </>
               ) : (
                 "Continue"
@@ -319,7 +321,7 @@ export default function PromptFlow() {
                 onClick={() => {
                   if (customTimeline.trim()) {
                     setIsGeneratingQuestions(true);
-                    generateQuestionsMutation.mutate();
+                    generatePlanMutation.mutate();
                   }
                 }}
                 disabled={!customTimeline.trim() || isGeneratingQuestions}
@@ -328,7 +330,7 @@ export default function PromptFlow() {
                 {isGeneratingQuestions ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Generating Questions...
+                    Creating Your Plan...
                   </>
                 ) : (
                   "Continue"

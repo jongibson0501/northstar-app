@@ -154,18 +154,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // AI-powered planning routes
-  app.post('/api/generate-questions', isAuthenticated, async (req: any, res) => {
+  // Direct AI-powered plan generation
+  app.post('/api/generate-plan', isAuthenticated, async (req: any, res) => {
     try {
-      const { goalTitle, timeline } = req.body;
-      console.log('Question generation request:', { goalTitle, timeline });
+      const { goalId, goalTitle, timeline } = req.body;
+      console.log('AI Plan generation request:', { goalId, goalTitle, timeline });
       
-      // Use fallback questions that work for any goal type
-      const questions = generateContextualQuestions(goalTitle, timeline);
-      res.json({ questions });
+      const timelineText = timeline.replace('_', ' ');
+      
+      const prompt = `Create a complete, actionable roadmap for someone who wants to achieve: "${goalTitle}" in ${timelineText}.
+
+Generate exactly 6 progressive milestones with these specific timeframes:
+1. Week 1 - Immediate start actions
+2. Month 1 - Building foundation
+3. Month 2 - Developing skills
+4. Month 3 - Applying knowledge
+5. Month 4-5 - Advanced practice (if timeline allows)
+6. Final month - Mastery and goals completion
+
+Each milestone should have 4-5 specific, actionable tasks that build progressively toward the goal.
+
+Return as JSON:
+{
+  "milestones": [
+    {
+      "title": "Milestone Name",
+      "timeframe": "Week 1",
+      "actions": [
+        {"title": "Specific action to take"},
+        {"title": "Another specific action"}
+      ]
+    }
+  ]
+}
+
+Make this plan specific to "${goalTitle}" with realistic, achievable tasks.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"milestones": []}');
+      
+      // Save the generated plan to database
+      for (let i = 0; i < result.milestones.length; i++) {
+        const milestone = result.milestones[i];
+        
+        const savedMilestone = await storage.createMilestone({
+          goalId,
+          title: milestone.title,
+          description: "",
+          targetMonth: i + 1,
+          orderIndex: i,
+          isCompleted: false,
+          completedAt: null,
+        });
+        
+        for (let j = 0; j < milestone.actions.length; j++) {
+          const action = milestone.actions[j];
+          await storage.createAction({
+            milestoneId: savedMilestone.id,
+            title: action.title,
+            description: "",
+            orderIndex: j,
+            isCompleted: false,
+            completedAt: null,
+          });
+        }
+      }
+      
+      res.json({ success: true });
     } catch (error) {
-      console.error("Error generating questions:", error);
-      res.status(500).json({ message: "Failed to generate questions" });
+      console.error("Error generating plan:", error);
+      res.status(500).json({ message: "Failed to generate plan" });
     }
   });
 
