@@ -252,11 +252,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
       console.log('User ID:', req.user?.claims?.sub);
       
-      const timelineText = timeline.replace('_', ' ');
+      // Update the goal with the selected timeline
+      await storage.updateGoal(goalId, { timeline });
       
+      const timelineText = timeline.replace('_', ' ');
       const timelineMonths = timeline === "1_month" ? 1 : timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
       
-      const prompt = `Create a complete, actionable roadmap for someone who wants to achieve: "${goalTitle}" in exactly ${timelineText} (${timelineMonths} months total).
+      console.log('Timeline calculation:', { timeline, timelineText, timelineMonths });
+      
+      let prompt;
+      if (timelineMonths === 3) {
+        prompt = `Create a 3-month fitness plan for: "${goalTitle}".
+
+STRICT REQUIREMENT: This is a 3-MONTH plan only. Do not create milestones beyond month 3.
+
+Create exactly 6 milestones for a 3-month timeline:
+1. Weeks 1-2: Getting started and building foundation
+2. Month 1 end: Establishing routines and basic fitness
+3. Month 2 start: Increasing intensity and building strength
+4. Month 2 end: Developing endurance and consistency  
+5. Month 3 start: Advanced training and technique refinement
+6. Month 3 end: Achieving target fitness level
+
+Each milestone should have 4-5 specific, actionable fitness tasks.
+
+Return as JSON:
+{
+  "milestones": [
+    {
+      "title": "Milestone Name",
+      "timeframe": "Weeks 1-2",
+      "actions": [
+        {"title": "Specific fitness action"},
+        {"title": "Another specific action"}
+      ]
+    }
+  ]
+}
+
+Focus on realistic fitness goals achievable in exactly 3 months.`;
+      } else {
+        prompt = `Create a complete, actionable roadmap for someone who wants to achieve: "${goalTitle}" in exactly ${timelineText} (${timelineMonths} months total).
 
 CRITICAL: This plan must fit within exactly ${timelineMonths} months. Do not exceed this timeframe.
 
@@ -267,13 +303,7 @@ ${timelineMonths === 1 ? `
 3. Week 3 - Skill building
 4. Week 4 - Application
 5. Month 1 end - Integration
-6. Month 1 final - Achievement` : timelineMonths === 3 ? `
-1. Week 1-2 - Foundation setup
-2. Month 1 - Basic skills
-3. Month 2 start - Intermediate practice
-4. Month 2 end - Application
-5. Month 3 start - Advanced techniques
-6. Month 3 end - Mastery achievement` : `
+6. Month 1 final - Achievement` : `
 1. Month 1 - Foundation
 2. Month 2 - Basic skills
 3. Month 3-4 - Intermediate practice
@@ -298,6 +328,7 @@ Return as JSON:
 }
 
 Make this plan specific to "${goalTitle}" with realistic, achievable tasks within ${timelineMonths} months.`;
+      }
 
       let result;
       
