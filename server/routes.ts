@@ -190,14 +190,22 @@ Return as JSON:
 
 Make this plan specific to "${goalTitle}" with realistic, achievable tasks.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-      });
+      let result;
+      
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+        });
 
-      const result = JSON.parse(response.choices[0].message.content || '{"milestones": []}');
+        result = JSON.parse(response.choices[0].message.content || '{"milestones": []}');
+      } catch (aiError: any) {
+        console.error("OpenAI API error:", aiError.message, aiError.status);
+        // Generate contextual plan based on goal type
+        result = { milestones: generateContextualPlan(goalTitle, timelineText) };
+      }
       
       // Save the generated plan to database
       for (let i = 0; i < result.milestones.length; i++) {
@@ -227,9 +235,13 @@ Make this plan specific to "${goalTitle}" with realistic, achievable tasks.`;
       }
       
       res.json({ success: true });
-    } catch (error) {
-      console.error("Error generating plan:", error);
-      res.status(500).json({ message: "Failed to generate plan" });
+    } catch (error: any) {
+      console.error("Error generating plan:", error.message, error.status, error.type);
+      if (error.status === 401) {
+        res.status(500).json({ message: "OpenAI API key issue. Please check your API key configuration." });
+      } else {
+        res.status(500).json({ message: "Failed to generate plan" });
+      }
     }
   });
 
