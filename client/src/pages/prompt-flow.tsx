@@ -79,14 +79,21 @@ export default function PromptFlow() {
       return await response.json();
     },
     onSuccess: (data) => {
-      setMilestones(data.milestones);
-      setCurrentStep(4);
+      console.log('Plan generation successful:', data);
+      if (data.success) {
+        // Redirect to roadmap page after successful generation
+        window.location.href = `/roadmap/${goalId}`;
+      } else {
+        setMilestones(data.milestones || []);
+        setCurrentStep(4);
+      }
       setIsGeneratingMilestones(false);
     },
     onError: (error) => {
+      console.error('Plan generation error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate milestones. Please try again.",
+        description: error.message || "Failed to generate plan. Please try again.",
         variant: "destructive",
       });
       setIsGeneratingMilestones(false);
