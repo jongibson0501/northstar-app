@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import GoalInput from "@/pages/goal-input";
 import PromptFlow from "@/pages/prompt-flow";
 import Roadmap from "@/pages/roadmap";
+import ProgressPage from "@/pages/progress";
 import Subscription from "@/pages/subscription";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
@@ -38,6 +39,7 @@ function Router() {
               <Route path="/new-goal" component={GoalInput} />
               <Route path="/goals/:id/plan" component={PromptFlow} />
               <Route path="/goals/:id" component={Roadmap} />
+              <Route path="/progress" component={ProgressPage} />
               <Route path="/subscription" component={Subscription} />
               <Route component={NotFound} />
             </Switch>
