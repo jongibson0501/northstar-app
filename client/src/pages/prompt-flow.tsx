@@ -35,10 +35,13 @@ export default function PromptFlow() {
 
   const generateQuestionsMutation = useMutation({
     mutationFn: async () => {
+      if (!goal?.title) {
+        throw new Error('Goal not loaded yet');
+      }
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
-      console.log('Sending goal title:', goal?.title);
+      console.log('Sending goal title:', goal.title);
       const response = await apiRequest("POST", "/api/generate-questions", {
-        goalTitle: goal?.title || "Learn a new language",
+        goalTitle: goal.title,
         timeline: timelineToSend
       });
       return await response.json();
@@ -61,11 +64,14 @@ export default function PromptFlow() {
 
   const generateMilestonesMutation = useMutation({
     mutationFn: async () => {
+      if (!goal?.title) {
+        throw new Error('Goal not loaded yet');
+      }
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
-      console.log('Sending milestone goal title:', goal?.title);
+      console.log('Sending milestone goal title:', goal.title);
       const response = await apiRequest("POST", "/api/generate-milestones", {
         goalId,
-        goalTitle: goal?.title || "Learn a new language", 
+        goalTitle: goal.title, 
         timeline: timelineToSend,
         questionsAndAnswers: questions.map((q, i) => ({ question: q, answer: answers[i] }))
       });
@@ -265,7 +271,7 @@ export default function PromptFlow() {
 
             <Button
               onClick={handleTimelineSelection}
-              disabled={!selectedTimeline || isGeneratingQuestions}
+              disabled={!selectedTimeline || isGeneratingQuestions || !goal?.title}
               className="w-full bg-primary hover:bg-primary/90 text-white py-4"
             >
               {isGeneratingQuestions ? (
