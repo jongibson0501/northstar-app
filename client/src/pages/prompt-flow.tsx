@@ -282,13 +282,18 @@ export default function PromptFlow() {
 
             <Button
               onClick={handleTimelineSelection}
-              disabled={!selectedTimeline || isGeneratingQuestions || !goal?.title}
+              disabled={!selectedTimeline || isGeneratingQuestions || isLoading}
               className="w-full bg-primary hover:bg-primary/90 text-white py-4"
             >
               {isGeneratingQuestions ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Creating Your Plan...
+                </>
+              ) : isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Loading Goal...
                 </>
               ) : (
                 "Continue"
