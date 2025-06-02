@@ -87,7 +87,7 @@ export default function PromptFlow() {
     for (let i = 1; i <= Math.min(3, months); i++) {
       const targetMonth = Math.ceil((i / 3) * months);
       milestones.push({
-        title: `Milestone ${i} for ${description.slice(0, 30)}...`,
+        title: `Milestone ${i} for ${description ? description.slice(0, 30) : 'your goal'}...`,
         targetMonth,
       });
     }
