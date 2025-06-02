@@ -290,14 +290,12 @@ export default function PromptFlow() {
               <input
                 type="text"
                 value={customTimeline}
-                onChange={(e) => {
-                  console.log('Input change:', e.target.value);
-                  setCustomTimeline(e.target.value);
-                }}
+                onChange={(e) => setCustomTimeline(e.target.value)}
                 placeholder="e.g., 2 weeks, 8 months, 2 years..."
-                className="w-full p-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white text-gray-900"
                 autoFocus
               />
+              <p className="text-sm text-gray-600 mt-2">Current input: "{customTimeline}"</p>
             </div>
 
             <div className="flex space-x-3">
