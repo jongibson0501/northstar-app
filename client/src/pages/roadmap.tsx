@@ -16,18 +16,10 @@ export default function Roadmap() {
   const goalId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
   
-  console.log('Roadmap params:', params);
-  console.log('Roadmap goalId:', goalId);
-
-  const { data: goal, isLoading, error } = useQuery<GoalWithMilestones>({
+  const { data: goal, isLoading } = useQuery<GoalWithMilestones>({
     queryKey: [`/api/goals/${goalId}`],
     enabled: !!goalId,
   });
-  
-  console.log('Query enabled:', !!goalId);
-  console.log('Query loading:', isLoading);
-  console.log('Query error:', error);
-  console.log('Goal data:', goal);
 
   const updateMilestoneMutation = useMutation({
     mutationFn: async ({ milestoneId, updates }: { milestoneId: number; updates: any }) => {

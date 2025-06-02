@@ -1,4 +1,4 @@
-import { Home, Map, TrendingUp, Crown } from "lucide-react";
+import { Home, TrendingUp, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 
@@ -7,7 +7,6 @@ export default function Navigation() {
 
   const navItems = [
     { icon: Home, label: "Goals", path: "/" },
-    { icon: Map, label: "Roadmap", path: "/roadmap" },
     { icon: TrendingUp, label: "Progress", path: "/progress" },
     { icon: Crown, label: "Premium", path: "/subscription" },
   ];

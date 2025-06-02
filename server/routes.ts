@@ -60,9 +60,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/goals/:id', isAuthenticated, async (req: any, res) => {
     try {
       const goalId = parseInt(req.params.id);
-      console.log('Fetching goal with ID:', goalId);
       const goal = await storage.getGoal(goalId);
-      console.log('Goal found:', goal ? `${goal.title} with ${goal.milestones?.length || 0} milestones` : 'null');
       if (!goal) {
         return res.status(404).json({ message: "Goal not found" });
       }
