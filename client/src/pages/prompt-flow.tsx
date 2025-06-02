@@ -150,18 +150,10 @@ export default function PromptFlow() {
     setMilestones(newMilestones);
   };
 
-  if (isLoading) {
+  if (isLoading || !goal || !goal.title) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!goal) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p>Goal not found</p>
       </div>
     );
   }
@@ -211,7 +203,7 @@ export default function PromptFlow() {
           <div className="p-4 space-y-6">
             <div>
               <h2 className="text-xl font-medium text-gray-800 mb-2">
-                How long do you want to work on "{goal?.title || 'your goal'}"?
+                How long do you want to work on {goal.title.toLowerCase()}?
               </h2>
               <p className="text-gray-600 mb-6">
                 Choose a realistic timeline that fits your schedule and commitment level.
