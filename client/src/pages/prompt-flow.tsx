@@ -271,7 +271,7 @@ export default function PromptFlow() {
 
             <Button
               onClick={handleTimelineSelection}
-              disabled={!selectedTimeline || isGeneratingQuestions || !goal?.title}
+              disabled={!selectedTimeline || isGeneratingQuestions}
               className="w-full bg-primary hover:bg-primary/90 text-white py-4"
             >
               {isGeneratingQuestions ? (
