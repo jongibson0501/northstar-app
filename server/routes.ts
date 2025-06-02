@@ -494,9 +494,9 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
       // Update goal with timeline
       await storage.updateGoal(goalId, { timeline });
       
-      // Function to convert timeframe to target month
+      // Function to convert timeframe to target month (using whole numbers for database)
       const convertTimeframeToMonth = (timeframe: string, fallback: number): number => {
-        if (timeframe === "Week 1") return 0.25;
+        if (timeframe === "Week 1") return 1;  // Use 1 for Week 1
         if (timeframe === "Month 1") return 1;
         if (timeframe === "Month 3") return 3;
         if (timeframe === "Month 6") return 6;
