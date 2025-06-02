@@ -147,7 +147,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { goalTitle, timeline } = req.body;
       
-      const prompt = `Generate exactly 5 personalized questions to help someone create a detailed action plan for achieving their goal: "${goalTitle}" within a ${timeline.replace('_', ' ')} timeframe.
+      // Try AI first, fallback to contextual questions if quota exceeded
+      try {
+        const prompt = `Generate exactly 5 personalized questions to help someone create a detailed action plan for achieving their goal: "${goalTitle}" within a ${timeline.replace('_', ' ')} timeframe.
 
 The questions should help understand:
 1. Current situation and starting point
@@ -158,20 +160,87 @@ The questions should help understand:
 
 Return only a JSON object with a "questions" array containing exactly 5 strings. Each question should be direct, actionable, and help create a personalized roadmap.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-      });
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+        });
 
-      const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
-      res.json(result);
+        const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
+        res.json(result);
+      } catch (aiError: any) {
+        if (aiError.status === 429) {
+          // Generate contextual questions based on goal type
+          const questions = generateContextualQuestions(goalTitle, timeline);
+          res.json({ questions });
+        } else {
+          throw aiError;
+        }
+      }
     } catch (error) {
       console.error("Error generating questions:", error);
       res.status(500).json({ message: "Failed to generate questions" });
     }
   });
+
+  function generateContextualQuestions(goalTitle: string, timeline: string): string[] {
+    const goal = goalTitle.toLowerCase();
+    const timeframe = timeline.replace('_', ' ');
+    
+    // Fitness/Health goals
+    if (goal.includes('shape') || goal.includes('fit') || goal.includes('health') || goal.includes('weight') || goal.includes('exercise')) {
+      return [
+        `What is your current fitness level and how often do you currently exercise?`,
+        `What time of day works best for you to work out, and how much time can you realistically commit each week?`,
+        `Do you prefer working out at home, at a gym, or outdoors? What equipment or resources do you have access to?`,
+        `Have you tried fitness programs before? What worked well and what challenges did you face?`,
+        `What specific aspect of getting in shape motivates you most - strength, endurance, weight loss, or feeling more confident?`
+      ];
+    }
+    
+    // Learning goals
+    if (goal.includes('learn') || goal.includes('study') || goal.includes('skill') || goal.includes('language')) {
+      return [
+        `What is your current experience level with this subject, and why do you want to learn it?`,
+        `How much time can you dedicate to learning each day or week given your current schedule?`,
+        `Do you learn better through reading, watching videos, hands-on practice, or working with others?`,
+        `What resources do you currently have access to (books, courses, mentors, software)?`,
+        `What would success look like to you at the end of your ${timeframe} timeline?`
+      ];
+    }
+    
+    // Career/Business goals
+    if (goal.includes('career') || goal.includes('job') || goal.includes('business') || goal.includes('work') || goal.includes('promotion')) {
+      return [
+        `What is your current situation and what specific career change or advancement are you seeking?`,
+        `What skills, connections, or qualifications do you currently have that support this goal?`,
+        `How much time can you dedicate to career development activities outside of your current responsibilities?`,
+        `What obstacles or challenges do you anticipate, and what support system do you have?`,
+        `What would achieving this goal mean for your life and how will you measure success?`
+      ];
+    }
+    
+    // Financial goals
+    if (goal.includes('money') || goal.includes('save') || goal.includes('debt') || goal.includes('financial') || goal.includes('income')) {
+      return [
+        `What is your current financial situation and what specific financial goal are you working toward?`,
+        `How much money can you realistically set aside each month toward this goal?`,
+        `What are your main expenses and where do you see potential opportunities to optimize your budget?`,
+        `Have you tried saving or budgeting strategies before? What worked and what didn't?`,
+        `What would achieving this financial goal enable you to do that you can't do now?`
+      ];
+    }
+    
+    // Generic questions for other goals
+    return [
+      `What is your current situation regarding "${goalTitle}" and what specifically do you want to achieve?`,
+      `What resources, skills, or support do you currently have that will help you reach this goal?`,
+      `How much time can you realistically dedicate to working on this goal each week?`,
+      `What challenges or obstacles do you anticipate, and how have you handled similar challenges before?`,
+      `What will success look like to you, and how will you know when you've achieved your goal?`
+    ];
+  }
 
   app.post('/api/generate-milestones', isAuthenticated, async (req: any, res) => {
     try {
@@ -180,7 +249,9 @@ Return only a JSON object with a "questions" array containing exactly 5 strings.
       const timelineMonths = timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
       const qaText = questionsAndAnswers.map((qa: any) => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
       
-      const prompt = `Based on the goal "${goalTitle}" to be achieved in ${timelineMonths} months and these user responses:
+      // Try AI first, fallback to contextual milestones if quota exceeded
+      try {
+        const prompt = `Based on the goal "${goalTitle}" to be achieved in ${timelineMonths} months and these user responses:
 
 ${qaText}
 
@@ -193,20 +264,132 @@ Return only a JSON object with a "milestones" array. Each milestone should have:
 
 Make the milestones and actions specific to the user's situation based on their answers.`;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" },
-        temperature: 0.7,
-      });
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [{ role: "user", content: prompt }],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+        });
 
-      const result = JSON.parse(response.choices[0].message.content || '{"milestones": []}');
-      res.json(result);
+        const result = JSON.parse(response.choices[0].message.content || '{"milestones": []}');
+        res.json(result);
+      } catch (aiError: any) {
+        if (aiError.status === 429) {
+          // Generate contextual milestones based on goal type and answers
+          const milestones = generateContextualMilestones(goalTitle, timeline, questionsAndAnswers);
+          res.json({ milestones });
+        } else {
+          throw aiError;
+        }
+      }
     } catch (error) {
       console.error("Error generating milestones:", error);
       res.status(500).json({ message: "Failed to generate milestones" });
     }
   });
+
+  function generateContextualMilestones(goalTitle: string, timeline: string, questionsAndAnswers: any[]): any[] {
+    const goal = goalTitle.toLowerCase();
+    const timelineMonths = timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
+    const answers = questionsAndAnswers.map(qa => qa.answer.toLowerCase());
+    
+    // Fitness/Health goals
+    if (goal.includes('shape') || goal.includes('fit') || goal.includes('health') || goal.includes('weight') || goal.includes('exercise')) {
+      return [
+        {
+          title: "Establish Consistent Exercise Routine",
+          targetMonth: Math.ceil(timelineMonths/3),
+          actions: [
+            { title: "Choose 3-4 workout days per week and stick to schedule" },
+            { title: "Set up workout space or gym membership" },
+            { title: "Track daily activities and establish baseline fitness level" }
+          ]
+        },
+        {
+          title: "Build Strength and Endurance",
+          targetMonth: Math.ceil(timelineMonths*2/3),
+          actions: [
+            { title: "Increase workout intensity and duration gradually" },
+            { title: "Add variety with different types of exercise" },
+            { title: "Monitor progress and adjust nutrition plan" }
+          ]
+        },
+        {
+          title: "Achieve Target Fitness Level",
+          targetMonth: timelineMonths,
+          actions: [
+            { title: "Complete fitness assessment to measure improvement" },
+            { title: "Establish maintenance routine for long-term success" },
+            { title: "Set new goals for continued progress" }
+          ]
+        }
+      ];
+    }
+    
+    // Learning goals
+    if (goal.includes('learn') || goal.includes('study') || goal.includes('skill') || goal.includes('language')) {
+      return [
+        {
+          title: "Master Fundamentals",
+          targetMonth: Math.ceil(timelineMonths/3),
+          actions: [
+            { title: "Complete basic course or tutorial series" },
+            { title: "Practice daily for 30-60 minutes" },
+            { title: "Join community or find study partner" }
+          ]
+        },
+        {
+          title: "Apply Knowledge Through Projects",
+          targetMonth: Math.ceil(timelineMonths*2/3),
+          actions: [
+            { title: "Start hands-on project using new skills" },
+            { title: "Seek feedback from experienced practitioners" },
+            { title: "Document learning progress and challenges" }
+          ]
+        },
+        {
+          title: "Achieve Proficiency",
+          targetMonth: timelineMonths,
+          actions: [
+            { title: "Complete advanced project or assessment" },
+            { title: "Share knowledge by teaching or mentoring others" },
+            { title: "Plan next level of learning and development" }
+          ]
+        }
+      ];
+    }
+    
+    // Generic milestones for other goals
+    return [
+      {
+        title: "Foundation and Planning",
+        targetMonth: Math.ceil(timelineMonths/3),
+        actions: [
+          { title: "Research and gather necessary resources" },
+          { title: "Create detailed action plan with specific steps" },
+          { title: "Set up tracking system to monitor progress" }
+        ]
+      },
+      {
+        title: "Active Implementation",
+        targetMonth: Math.ceil(timelineMonths*2/3),
+        actions: [
+          { title: "Execute main activities toward goal achievement" },
+          { title: "Address challenges and adjust approach as needed" },
+          { title: "Seek support and guidance from others" }
+        ]
+      },
+      {
+        title: "Goal Achievement and Next Steps",
+        targetMonth: timelineMonths,
+        actions: [
+          { title: "Complete final steps to achieve target goal" },
+          { title: "Evaluate results and celebrate success" },
+          { title: "Plan for long-term maintenance or new goals" }
+        ]
+      }
+    ];
+  }
 
   app.post('/api/save-milestones', isAuthenticated, async (req: any, res) => {
     try {
