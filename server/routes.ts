@@ -154,11 +154,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function for fallback plan generation
+  function generateContextualPlan(goalTitle: string, timeline: string): any[] {
+    const timelineMonths = timeline === "1_month" ? 1 : timeline === "3_months" ? 3 : 6;
+    const weeksPerMilestone = Math.ceil((timelineMonths * 4) / 6);
+    
+    return [
+      {
+        title: "Foundation & Basics",
+        description: `Learn fundamental concepts for ${goalTitle}`,
+        targetDate: new Date(Date.now() + weeksPerMilestone * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        actions: [
+          { title: "Research and understand basics", description: "Learn core concepts and terminology" },
+          { title: "Gather necessary resources", description: "Acquire tools, materials, or access needed" }
+        ]
+      },
+      {
+        title: "First Steps",
+        description: "Begin practical application",
+        targetDate: new Date(Date.now() + weeksPerMilestone * 2 * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        actions: [
+          { title: "Start with simple exercises", description: "Practice basic techniques or methods" },
+          { title: "Build initial habits", description: "Establish routine and consistency" }
+        ]
+      },
+      {
+        title: "Skill Development",
+        description: "Expand knowledge and abilities",
+        targetDate: new Date(Date.now() + weeksPerMilestone * 3 * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        actions: [
+          { title: "Take on intermediate challenges", description: "Push beyond beginner level" },
+          { title: "Learn from mistakes", description: "Analyze and improve from setbacks" }
+        ]
+      },
+      {
+        title: "Practical Application",
+        description: "Apply skills in real scenarios",
+        targetDate: new Date(Date.now() + weeksPerMilestone * 4 * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        actions: [
+          { title: "Complete meaningful projects", description: "Work on substantial applications of your skills" },
+          { title: "Seek feedback", description: "Get input from others to improve" }
+        ]
+      },
+      {
+        title: "Advanced Techniques",
+        description: "Master complex aspects",
+        targetDate: new Date(Date.now() + weeksPerMilestone * 5 * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        actions: [
+          { title: "Explore advanced methods", description: "Learn sophisticated techniques" },
+          { title: "Develop personal style", description: "Find your unique approach" }
+        ]
+      },
+      {
+        title: "Mastery & Beyond",
+        description: "Achieve proficiency and set future goals",
+        targetDate: new Date(Date.now() + weeksPerMilestone * 6 * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        actions: [
+          { title: "Demonstrate competency", description: "Show mastery through examples or tests" },
+          { title: "Plan next level goals", description: "Set objectives for continued growth" }
+        ]
+      }
+    ];
+  }
+
   // Direct AI-powered plan generation
   app.post('/api/generate-plan', isAuthenticated, async (req: any, res) => {
     try {
       const { goalId, goalTitle, timeline } = req.body;
       console.log('AI Plan generation request:', { goalId, goalTitle, timeline });
+      console.log('OpenAI API Key exists:', !!process.env.OPENAI_API_KEY);
+      console.log('User ID:', req.user?.claims?.sub);
       
       const timelineText = timeline.replace('_', ' ');
       
@@ -236,14 +301,21 @@ Make this plan specific to "${goalTitle}" with realistic, achievable tasks.`;
       
       res.json({ success: true });
     } catch (error: any) {
-      console.error("Error generating plan:", error.message, error.status, error.type);
-      if (error.status === 401) {
-        res.status(500).json({ message: "OpenAI API key issue. Please check your API key configuration." });
-      } else {
-        res.status(500).json({ message: "Failed to generate plan" });
-      }
+      console.error("Error generating plan - Full error:", error);
+      console.error("Error details:", {
+        message: error.message,
+        status: error.status,
+        type: error.type,
+        stack: error.stack
+      });
+      res.status(500).json({ 
+        message: "Failed to generate plan", 
+        error: error.message || "Unknown error" 
+      });
     }
   });
+
+
 
   function generateContextualQuestions(goalTitle: string, timeline: string): string[] {
     const goal = goalTitle.toLowerCase();
