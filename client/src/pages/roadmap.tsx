@@ -20,7 +20,7 @@ export default function Roadmap() {
   console.log('Roadmap goalId:', goalId);
 
   const { data: goal, isLoading, error } = useQuery<GoalWithMilestones>({
-    queryKey: ["/api/goals", goalId],
+    queryKey: [`/api/goals/${goalId}`],
     enabled: !!goalId,
   });
   
