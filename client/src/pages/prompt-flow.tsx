@@ -60,10 +60,11 @@ export default function PromptFlow() {
 
   const generateMilestonesMutation = useMutation({
     mutationFn: async () => {
+      const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
       const response = await apiRequest("POST", "/api/generate-milestones", {
         goalId,
-        goalTitle: goal?.title,
-        timeline: selectedTimeline,
+        goalTitle: goal?.title || "personal goal",
+        timeline: timelineToSend,
         questionsAndAnswers: questions.map((q, i) => ({ question: q, answer: answers[i] }))
       });
       return await response.json();

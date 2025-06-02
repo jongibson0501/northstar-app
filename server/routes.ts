@@ -494,14 +494,29 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
       // Update goal with timeline
       await storage.updateGoal(goalId, { timeline });
       
+      // Function to convert timeframe to target month
+      const convertTimeframeToMonth = (timeframe: string, fallback: number): number => {
+        if (timeframe === "Week 1") return 0.25;
+        if (timeframe === "Month 1") return 1;
+        if (timeframe === "Month 3") return 3;
+        if (timeframe === "Month 6") return 6;
+        if (timeframe === "Month 9") return 9;
+        if (timeframe === "Month 12") return 12;
+        return fallback;
+      };
+
       // Save milestones and actions
       for (let i = 0; i < milestones.length; i++) {
         const milestone = milestones[i];
+        const targetMonth = milestone.timeframe ? 
+          convertTimeframeToMonth(milestone.timeframe, i + 1) : 
+          (milestone.targetMonth || (i + 1));
+          
         const savedMilestone = await storage.createMilestone({
           goalId,
           title: milestone.title,
           description: "",
-          targetMonth: milestone.targetMonth,
+          targetMonth: targetMonth,
           orderIndex: i,
           isCompleted: false,
         });
