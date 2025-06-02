@@ -29,7 +29,7 @@ export default function PromptFlow() {
   const [isGeneratingMilestones, setIsGeneratingMilestones] = useState(false);
 
   const { data: goal, isLoading } = useQuery<GoalWithMilestones>({
-    queryKey: ["/api/goals", goalId],
+    queryKey: [`/api/goals/${goalId}`],
     enabled: !!goalId,
   });
 
@@ -67,7 +67,7 @@ export default function PromptFlow() {
   const generateMilestonesMutation = useMutation({
     mutationFn: async () => {
       // Wait for goal to be loaded
-      if (!goal?.title) {
+      if (!goal || !goal.title) {
         console.log('Goal not loaded, current goal:', goal);
         throw new Error('Goal data is still loading. Please try again in a moment.');
       }
