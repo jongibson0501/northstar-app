@@ -36,8 +36,9 @@ export default function PromptFlow() {
   const generateQuestionsMutation = useMutation({
     mutationFn: async () => {
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
+      console.log('Sending goal title:', goal?.title);
       const response = await apiRequest("POST", "/api/generate-questions", {
-        goalTitle: goal?.title || "personal goal",
+        goalTitle: goal?.title || "Learn a new language",
         timeline: timelineToSend
       });
       return await response.json();
@@ -61,9 +62,10 @@ export default function PromptFlow() {
   const generateMilestonesMutation = useMutation({
     mutationFn: async () => {
       const timelineToSend = selectedTimeline === "custom" ? customTimeline : selectedTimeline;
+      console.log('Sending milestone goal title:', goal?.title);
       const response = await apiRequest("POST", "/api/generate-milestones", {
         goalId,
-        goalTitle: goal?.title || "personal goal",
+        goalTitle: goal?.title || "Learn a new language", 
         timeline: timelineToSend,
         questionsAndAnswers: questions.map((q, i) => ({ question: q, answer: answers[i] }))
       });

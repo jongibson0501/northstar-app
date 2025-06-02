@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
-import { Target, TrendingUp, Plus } from "lucide-react";
+import { Target, TrendingUp, Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link } from "wouter";
@@ -45,6 +45,27 @@ export default function Home() {
       toast({
         title: "Error",
         description: "Failed to create goal. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteGoalMutation = useMutation({
+    mutationFn: async (goalId: number) => {
+      const response = await apiRequest("DELETE", `/api/goals/${goalId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+      toast({
+        title: "Goal Deleted",
+        description: "Your goal has been deleted successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete goal. Please try again.",
         variant: "destructive",
       });
     },
@@ -141,29 +162,43 @@ export default function Home() {
                   const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
                   
                   return (
-                    <Link key={goal.id} href={`/goals/${goal.id}`}>
-                      <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-800 mb-1">
-                                {goal.title}
-                              </h4>
-                              <p className="text-sm text-gray-600">
-                                {completedMilestones} of {goal.milestones.length} milestones completed
-                              </p>
-                            </div>
-                            <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
-                              <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs font-medium">
-                                  {progress}%
-                                </span>
+                    <Card key={goal.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <Link href={`/goals/${goal.id}`} className="flex-1 cursor-pointer">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-800 mb-1">
+                                  {goal.title}
+                                </h4>
+                                <p className="text-sm text-gray-600">
+                                  {completedMilestones} of {goal.milestones.length} milestones completed
+                                </p>
+                              </div>
+                              <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
+                                <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
+                                  <span className="text-white text-xs font-medium">
+                                    {progress}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              deleteGoalMutation.mutate(goal.id);
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
                   );
                 })}
               </div>
