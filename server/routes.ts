@@ -485,38 +485,6 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
       }
     ];
   }
-    
-    // Generic milestones for other goals
-    return [
-      {
-        title: "Foundation and Planning",
-        targetMonth: Math.ceil(timelineMonths/3),
-        actions: [
-          { title: "Research and gather necessary resources" },
-          { title: "Create detailed action plan with specific steps" },
-          { title: "Set up tracking system to monitor progress" }
-        ]
-      },
-      {
-        title: "Active Implementation",
-        targetMonth: Math.ceil(timelineMonths*2/3),
-        actions: [
-          { title: "Execute main activities toward goal achievement" },
-          { title: "Address challenges and adjust approach as needed" },
-          { title: "Seek support and guidance from others" }
-        ]
-      },
-      {
-        title: "Goal Achievement and Next Steps",
-        targetMonth: timelineMonths,
-        actions: [
-          { title: "Complete final steps to achieve target goal" },
-          { title: "Evaluate results and celebrate success" },
-          { title: "Plan for long-term maintenance or new goals" }
-        ]
-      }
-    ];
-  }
 
   app.post('/api/save-milestones', isAuthenticated, async (req: any, res) => {
     try {
