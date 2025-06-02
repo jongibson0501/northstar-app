@@ -160,36 +160,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { goalTitle, timeline } = req.body;
       console.log('Question generation request:', { goalTitle, timeline });
       
-      // Try AI first, fallback to contextual questions if quota exceeded
-      try {
-        const prompt = `Generate exactly 5 simple, easy-to-answer questions for someone working on: "${goalTitle}" in ${timeline.replace('_', ' ')}.
-
-Make questions conversational and specific. Focus on:
-1. Where they are now (current state)
-2. What time they have available
-3. What they prefer or enjoy
-4. What has worked/not worked before
-5. What success looks like to them
-
-Keep questions under 15 words each. Make them feel like a friendly conversation, not an interview.
-
-Return only a JSON object with a "questions" array containing exactly 5 simple question strings.`;
-
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-          messages: [{ role: "user", content: prompt }],
-          response_format: { type: "json_object" },
-          temperature: 0.7,
-        });
-
-        const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
-        res.json(result);
-      } catch (aiError: any) {
-        console.error("OpenAI API error details:", aiError.message, aiError.status, aiError.type);
-        // Use fallback for any OpenAI error (rate limit, invalid key, etc.)
-        const questions = generateContextualQuestions(goalTitle, timeline);
-        res.json({ questions });
-      }
+      // Use fallback questions that work for any goal type
+      const questions = generateContextualQuestions(goalTitle, timeline);
+      res.json({ questions });
     } catch (error) {
       console.error("Error generating questions:", error);
       res.status(500).json({ message: "Failed to generate questions" });
