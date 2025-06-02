@@ -146,6 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/generate-questions', isAuthenticated, async (req: any, res) => {
     try {
       const { goalTitle, timeline } = req.body;
+      console.log('Question generation request:', { goalTitle, timeline });
       
       // Try AI first, fallback to contextual questions if quota exceeded
       try {

@@ -108,7 +108,7 @@ export default function PromptFlow() {
   });
 
   const handleTimelineSelection = () => {
-    if (!selectedTimeline) return;
+    if (!selectedTimeline || !goal?.title) return;
     setIsGeneratingQuestions(true);
     generateQuestionsMutation.mutate();
   };
