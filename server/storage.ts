@@ -14,7 +14,7 @@ import {
   type GoalWithMilestones,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -127,6 +127,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteGoal(id: number): Promise<void> {
+    // First, get all milestones for this goal
+    const goalMilestones = await db.select({ id: milestones.id }).from(milestones).where(eq(milestones.goalId, id));
+    
+    // Delete all actions for these milestones
+    for (const milestone of goalMilestones) {
+      await db.delete(actions).where(eq(actions.milestoneId, milestone.id));
+    }
+    
+    // Then delete all milestones for this goal
+    await db.delete(milestones).where(eq(milestones.goalId, id));
+    
+    // Finally, delete the goal
     await db.delete(goals).where(eq(goals.id, id));
   }
 
