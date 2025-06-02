@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2 } from "lucide-react";
 import { useLocation, useRoute } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -17,123 +18,149 @@ export default function PromptFlow() {
   const { toast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedTimeline, setSelectedTimeline] = useState("3_months");
-  const [milestones, setMilestones] = useState([
-    { title: "", targetMonth: 1 },
-    { title: "", targetMonth: 2 },
-    { title: "", targetMonth: 3 },
-  ]);
+  const [selectedTimeline, setSelectedTimeline] = useState("");
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isGeneratingMilestones, setIsGeneratingMilestones] = useState(false);
 
   const { data: goal, isLoading } = useQuery<GoalWithMilestones>({
     queryKey: ["/api/goals", goalId],
     enabled: !!goalId,
   });
 
-  const updateGoalMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest("PUT", `/api/goals/${goalId}`, data);
-      return response.json();
+  const generateQuestionsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/generate-questions", {
+        goalTitle: goal?.title,
+        timeline: selectedTimeline
+      });
+      return await response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/goals", goalId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+    onSuccess: (data) => {
+      setQuestions(data.questions);
+      setAnswers(new Array(data.questions.length).fill(""));
+      setCurrentStep(3);
+      setIsGeneratingQuestions(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to generate questions. Please try again.",
+        variant: "destructive",
+      });
+      setIsGeneratingQuestions(false);
     },
   });
 
-  const createMilestonesMutation = useMutation({
-    mutationFn: async (milestonesData: any[]) => {
-      const promises = milestonesData.map((milestone, index) =>
-        apiRequest("POST", "/api/milestones", {
-          goalId: goalId,
-          title: milestone.title,
-          description: "",
-          orderIndex: index,
-          targetMonth: milestone.targetMonth,
-        })
-      );
-      await Promise.all(promises);
+  const generateMilestonesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/generate-milestones", {
+        goalId,
+        goalTitle: goal?.title,
+        timeline: selectedTimeline,
+        questionsAndAnswers: questions.map((q, i) => ({ question: q, answer: answers[i] }))
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setMilestones(data.milestones);
+      setCurrentStep(4);
+      setIsGeneratingMilestones(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to generate milestones. Please try again.",
+        variant: "destructive",
+      });
+      setIsGeneratingMilestones(false);
+    },
+  });
+
+  const saveMilestonesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/save-milestones", {
+        goalId,
+        milestones,
+        timeline: selectedTimeline
+      });
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/goals", goalId] });
-      setLocation(`/goals/${goalId}`);
       toast({
-        title: "Roadmap Created",
-        description: "Your goal roadmap is ready!",
+        title: "Success",
+        description: "Your roadmap has been created!",
       });
+      setLocation(`/goals/${goalId}`);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create milestones. Please try again.",
+        description: "Failed to save milestones. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  useEffect(() => {
-    if (goal && selectedTimeline) {
-      // Generate suggested milestones based on goal description and timeline
-      const timelineMonths = selectedTimeline === "3_months" ? 3 : 
-                           selectedTimeline === "6_months" ? 6 : 12;
-      
-      const suggestedMilestones = generateMilestones(goal.title, timelineMonths);
-      setMilestones(suggestedMilestones);
-    }
-  }, [goal, selectedTimeline]);
-
-  const generateMilestones = (description: string, months: number) => {
-    // Simple milestone generation - in a real app, this would use AI
-    const milestones = [];
-    for (let i = 1; i <= Math.min(3, months); i++) {
-      const targetMonth = Math.ceil((i / 3) * months);
-      milestones.push({
-        title: `Milestone ${i} for ${description ? description.slice(0, 30) : 'your goal'}...`,
-        targetMonth,
-      });
-    }
-    return milestones;
+  const handleTimelineSelection = () => {
+    if (!selectedTimeline) return;
+    setIsGeneratingQuestions(true);
+    generateQuestionsMutation.mutate();
   };
 
-  const handleTimelineSelect = (timeline: string) => {
-    setSelectedTimeline(timeline);
-    updateGoalMutation.mutate({ timeline });
+  const handleAnswerChange = (value: string) => {
+    setCurrentAnswer(value);
+    const newAnswers = [...answers];
+    newAnswers[currentQuestionIndex] = value;
+    setAnswers(newAnswers);
   };
 
-  const handleNextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setCurrentAnswer(answers[currentQuestionIndex + 1] || "");
     } else {
-      // Create milestones and navigate to roadmap
-      const validMilestones = milestones.filter(m => m.title.trim());
-      if (validMilestones.length === 0) {
-        toast({
-          title: "Error",
-          description: "Please add at least one milestone",
-          variant: "destructive",
-        });
-        return;
-      }
-      createMilestonesMutation.mutate(validMilestones);
+      // All questions answered, generate milestones
+      setIsGeneratingMilestones(true);
+      generateMilestonesMutation.mutate();
     }
   };
 
-  const updateMilestone = (index: number, title: string) => {
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+      setCurrentAnswer(answers[currentQuestionIndex - 1] || "");
+    }
+  };
+
+  const handleMilestoneChange = (index: number, field: string, value: string) => {
     const newMilestones = [...milestones];
-    newMilestones[index].title = title;
+    newMilestones[index] = { ...newMilestones[index], [field]: value };
+    setMilestones(newMilestones);
+  };
+
+  const handleActionChange = (milestoneIndex: number, actionIndex: number, value: string) => {
+    const newMilestones = [...milestones];
+    newMilestones[milestoneIndex].actions[actionIndex] = { ...newMilestones[milestoneIndex].actions[actionIndex], title: value };
     setMilestones(newMilestones);
   };
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!goal) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <p>Goal not found</p>
       </div>
     );
@@ -142,163 +169,232 @@ export default function PromptFlow() {
   return (
     <div className="min-h-screen bg-background text-secondary pb-20">
       <div className="max-w-md mx-auto bg-white shadow-xl min-h-screen">
-        <section className="p-4">
-          <div className="mb-6">
-            <div className="flex items-center mb-4">
-              <Button 
-                variant="ghost"
-                size="sm"
-                onClick={() => setLocation(`/goals/${goalId}`)}
-                className="text-primary mr-3 p-1"
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => currentStep === 1 ? setLocation(`/goals/${goalId}`) : setCurrentStep(currentStep - 1)}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+          <h1 className="text-lg font-medium text-gray-800">Plan Your Goal</h1>
+          <div className="w-8" />
+        </div>
+
+        {/* Progress Indicator */}
+        <div className="p-4">
+          <div className="flex items-center space-x-2 mb-4">
+            {[1, 2, 3, 4].map((step) => (
+              <div
+                key={step}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step <= currentStep
+                    ? "bg-primary text-white"
+                    : "bg-gray-200 text-gray-500"
+                }`}
               >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <h2 className="text-xl font-medium text-gray-800">Plan Your Journey</h2>
-            </div>
-            
-            {/* Progress Indicator */}
-            <div className="flex items-center space-x-2 mb-6">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 1 ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'
-              }`}>1</div>
-              <div className={`flex-1 h-1 rounded ${currentStep >= 2 ? 'bg-primary' : 'bg-gray-300'}`}></div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 2 ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'
-              }`}>2</div>
-              <div className={`flex-1 h-1 rounded ${currentStep >= 3 ? 'bg-primary' : 'bg-gray-300'}`}></div>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 3 ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'
-              }`}>3</div>
-            </div>
+                {step < currentStep ? <Check className="w-4 h-4" /> : step}
+              </div>
+            ))}
           </div>
+          <p className="text-sm text-gray-600">
+            {currentStep === 1 && "Choose your timeline"}
+            {currentStep === 2 && "Generating personalized questions..."}
+            {currentStep === 3 && `Question ${currentQuestionIndex + 1} of ${questions.length}`}
+            {currentStep === 4 && "Review and customize your roadmap"}
+          </p>
+        </div>
 
-          {/* Step 1: Timeline Selection */}
-          {currentStep === 1 && (
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">When do you want to achieve this?</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant={selectedTimeline === "3_months" ? "default" : "outline"}
-                    className={`p-4 h-auto text-center ${
-                      selectedTimeline === "3_months" 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'border-gray-200 hover:border-primary'
-                    }`}
-                    onClick={() => handleTimelineSelect("3_months")}
-                  >
-                    <div>
-                      <div className="text-2xl mb-2">🏃</div>
-                      <div className="font-medium">3 Months</div>
-                      <div className="text-sm opacity-80">Quick sprint</div>
-                    </div>
-                  </Button>
-                  <Button
-                    variant={selectedTimeline === "6_months" ? "default" : "outline"}
-                    className={`p-4 h-auto text-center ${
-                      selectedTimeline === "6_months" 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'border-gray-200 hover:border-primary'
-                    }`}
-                    onClick={() => handleTimelineSelect("6_months")}
-                  >
-                    <div>
-                      <div className="text-2xl mb-2">🚶</div>
-                      <div className="font-medium">6 Months</div>
-                      <div className="text-sm opacity-80">Steady pace</div>
-                    </div>
-                  </Button>
-                  <Button
-                    variant={selectedTimeline === "1_year" ? "default" : "outline"}
-                    className={`p-4 h-auto text-center ${
-                      selectedTimeline === "1_year" 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'border-gray-200 hover:border-primary'
-                    }`}
-                    onClick={() => handleTimelineSelect("1_year")}
-                  >
-                    <div>
-                      <div className="text-2xl mb-2">🏔️</div>
-                      <div className="font-medium">1 Year</div>
-                      <div className="text-sm opacity-80">Long journey</div>
-                    </div>
-                  </Button>
-                  <Button
-                    variant={selectedTimeline === "custom" ? "default" : "outline"}
-                    className={`p-4 h-auto text-center ${
-                      selectedTimeline === "custom" 
-                        ? 'bg-primary text-white border-primary' 
-                        : 'border-gray-200 hover:border-primary'
-                    }`}
-                    onClick={() => handleTimelineSelect("custom")}
-                  >
-                    <div>
-                      <div className="text-2xl mb-2">⚙️</div>
-                      <div className="font-medium">Custom</div>
-                      <div className="text-sm opacity-80">Set your own</div>
-                    </div>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+        {/* Step 1: Timeline Selection */}
+        {currentStep === 1 && (
+          <div className="p-4 space-y-6">
+            <div>
+              <h2 className="text-xl font-medium text-gray-800 mb-2">
+                How long do you want to work on "{goal.title}"?
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Choose a realistic timeline that fits your schedule and commitment level.
+              </p>
+            </div>
 
-          {/* Step 2: Milestone Planning */}
-          {currentStep === 2 && (
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Key Milestones</h3>
-                <p className="text-sm text-gray-600 mb-4">Define the major steps toward your goal:</p>
-                
-                <div className="space-y-4">
-                  {milestones.map((milestone, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-accent">
-                          Milestone {index + 1} • Month {milestone.targetMonth}
-                        </span>
-                        <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600 p-1">
-                          <Edit className="w-4 h-4" />
-                        </Button>
+            <div className="space-y-3">
+              {[
+                { value: "3_months", label: "3 Months", desc: "Intensive, focused approach" },
+                { value: "6_months", label: "6 Months", desc: "Balanced progress with flexibility" },
+                { value: "1_year", label: "1 Year", desc: "Gradual, sustainable development" },
+              ].map((option) => (
+                <Card
+                  key={option.value}
+                  className={`cursor-pointer transition-all ${
+                    selectedTimeline === option.value
+                      ? "border-primary bg-primary/5"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => setSelectedTimeline(option.value)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 ${
+                          selectedTimeline === option.value
+                            ? "border-primary bg-primary"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {selectedTimeline === option.value && (
+                          <div className="w-full h-full rounded-full bg-white scale-50" />
+                        )}
                       </div>
-                      <Input
-                        value={milestone.title}
-                        onChange={(e) => updateMilestone(index, e.target.value)}
-                        placeholder={`Enter milestone ${index + 1}...`}
-                        className="w-full font-medium text-gray-800 bg-transparent border-none p-0 focus:outline-none"
-                      />
+                      <div>
+                        <h3 className="font-medium text-gray-800">{option.label}</h3>
+                        <p className="text-sm text-gray-600">{option.desc}</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-          {/* Navigation */}
-          <div className="flex space-x-3">
-            {currentStep > 1 && (
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep(currentStep - 1)}
-                className="flex-1"
-              >
-                Back
-              </Button>
-            )}
-            <Button 
-              onClick={handleNextStep}
-              disabled={createMilestonesMutation.isPending}
-              className="flex-1 bg-primary hover:bg-primary-dark text-white"
+            <Button
+              onClick={handleTimelineSelection}
+              disabled={!selectedTimeline || isGeneratingQuestions}
+              className="w-full bg-primary hover:bg-primary/90 text-white py-4"
             >
-              {currentStep < 3 
-                ? "Next" 
-                : createMilestonesMutation.isPending 
-                  ? "Creating..." 
-                  : "Create Roadmap"
-              }
+              {isGeneratingQuestions ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Questions...
+                </>
+              ) : (
+                "Continue"
+              )}
             </Button>
           </div>
-        </section>
+        )}
+
+        {/* Step 3: Questions */}
+        {currentStep === 3 && questions.length > 0 && (
+          <div className="p-4 space-y-6">
+            <div>
+              <h2 className="text-xl font-medium text-gray-800 mb-2">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Help us understand your situation better to create a personalized roadmap.
+              </p>
+            </div>
+
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="font-medium text-gray-800 mb-4">
+                  {questions[currentQuestionIndex]}
+                </h3>
+                <Textarea
+                  value={currentAnswer}
+                  onChange={(e) => handleAnswerChange(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  className="min-h-[120px] resize-none"
+                />
+              </CardContent>
+            </Card>
+
+            <div className="flex space-x-3">
+              {currentQuestionIndex > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousQuestion}
+                  className="flex-1"
+                >
+                  Previous
+                </Button>
+              )}
+              <Button
+                onClick={handleNextQuestion}
+                disabled={!currentAnswer.trim()}
+                className="flex-1 bg-primary hover:bg-primary/90 text-white"
+              >
+                {currentQuestionIndex === questions.length - 1 ? (
+                  isGeneratingMilestones ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Creating Roadmap...
+                    </>
+                  ) : (
+                    "Create Roadmap"
+                  )
+                ) : (
+                  "Next"
+                )}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Review Milestones */}
+        {currentStep === 4 && milestones.length > 0 && (
+          <div className="p-4 space-y-6">
+            <div>
+              <h2 className="text-xl font-medium text-gray-800 mb-2">
+                Your Personalized Roadmap
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Review and customize your milestones and action steps.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {milestones.map((milestone, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <div className="mb-3">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Milestone {index + 1} (Month {milestone.targetMonth})
+                      </label>
+                      <Input
+                        value={milestone.title}
+                        onChange={(e) => handleMilestoneChange(index, "title", e.target.value)}
+                        className="font-medium"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Action Steps
+                      </label>
+                      <div className="space-y-2">
+                        {milestone.actions?.map((action: any, actionIndex: number) => (
+                          <Input
+                            key={actionIndex}
+                            value={action.title}
+                            onChange={(e) => handleActionChange(index, actionIndex, e.target.value)}
+                            placeholder={`Action step ${actionIndex + 1}`}
+                            className="text-sm"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Button
+              onClick={() => saveMilestonesMutation.mutate()}
+              disabled={saveMilestonesMutation.isPending}
+              className="w-full bg-primary hover:bg-primary/90 text-white py-4"
+            >
+              {saveMilestonesMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving Roadmap...
+                </>
+              ) : (
+                "Save My Roadmap"
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

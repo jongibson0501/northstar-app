@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertGoalSchema, insertMilestoneSchema, insertActionSchema } from "@shared/schema";
+import OpenAI from "openai";
 import Stripe from "stripe";
 import { z } from "zod";
 
@@ -10,6 +11,11 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error('Missing required OpenAI API key: OPENAI_API_KEY');
+}
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -133,6 +139,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating action:", error);
       res.status(400).json({ message: "Failed to update action" });
+    }
+  });
+
+  // AI-powered planning routes
+  app.post('/api/generate-questions', isAuthenticated, async (req: any, res) => {
+    try {
+      const { goalTitle, timeline } = req.body;
+      
+      const prompt = `Generate exactly 5 personalized questions to help someone create a detailed action plan for achieving their goal: "${goalTitle}" within a ${timeline.replace('_', ' ')} timeframe.
+
+The questions should help understand:
+1. Current situation and starting point
+2. Available resources and constraints
+3. Past experience and challenges
+4. Motivation and commitment level
+5. Specific preferences and circumstances
+
+Return only a JSON object with a "questions" array containing exactly 5 strings. Each question should be direct, actionable, and help create a personalized roadmap.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
+      res.json(result);
+    } catch (error) {
+      console.error("Error generating questions:", error);
+      res.status(500).json({ message: "Failed to generate questions" });
+    }
+  });
+
+  app.post('/api/generate-milestones', isAuthenticated, async (req: any, res) => {
+    try {
+      const { goalTitle, timeline, questionsAndAnswers } = req.body;
+      
+      const timelineMonths = timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
+      const qaText = questionsAndAnswers.map((qa: any) => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n\n');
+      
+      const prompt = `Based on the goal "${goalTitle}" to be achieved in ${timelineMonths} months and these user responses:
+
+${qaText}
+
+Create a personalized roadmap with exactly 3 milestones. Each milestone should have:
+- A clear, specific title
+- Target month (distributed evenly: month ${Math.ceil(timelineMonths/3)}, ${Math.ceil(timelineMonths*2/3)}, ${timelineMonths})
+- Exactly 3 concrete, actionable steps
+
+Return only a JSON object with a "milestones" array. Each milestone should have: title, targetMonth, and actions array with 3 objects containing "title" field.
+
+Make the milestones and actions specific to the user's situation based on their answers.`;
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"milestones": []}');
+      res.json(result);
+    } catch (error) {
+      console.error("Error generating milestones:", error);
+      res.status(500).json({ message: "Failed to generate milestones" });
+    }
+  });
+
+  app.post('/api/save-milestones', isAuthenticated, async (req: any, res) => {
+    try {
+      const { goalId, milestones, timeline } = req.body;
+      const userId = req.user.claims.sub;
+      
+      // Update goal with timeline
+      await storage.updateGoal(goalId, { timeline });
+      
+      // Save milestones and actions
+      for (let i = 0; i < milestones.length; i++) {
+        const milestone = milestones[i];
+        const savedMilestone = await storage.createMilestone({
+          goalId,
+          title: milestone.title,
+          description: "",
+          targetMonth: milestone.targetMonth,
+          orderIndex: i,
+          isCompleted: false,
+        });
+        
+        // Save actions for this milestone
+        for (let j = 0; j < milestone.actions.length; j++) {
+          const action = milestone.actions[j];
+          await storage.createAction({
+            milestoneId: savedMilestone.id,
+            title: action.title,
+            description: "",
+            orderIndex: j,
+            isCompleted: false,
+          });
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving milestones:", error);
+      res.status(500).json({ message: "Failed to save milestones" });
     }
   });
 
