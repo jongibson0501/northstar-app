@@ -42,7 +42,7 @@ export default function Roadmap() {
   });
 
   const calculateProgress = () => {
-    if (!goal?.milestones.length) return 0;
+    if (!goal?.milestones || goal.milestones.length === 0) return 0;
     const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
     return Math.round((completedMilestones / goal.milestones.length) * 100);
   };
