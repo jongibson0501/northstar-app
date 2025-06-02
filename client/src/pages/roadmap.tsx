@@ -130,7 +130,9 @@ export default function Roadmap() {
                   <div className="p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-accent">
-                        Month {milestone.targetMonth}
+                        {milestone.targetMonth === 0.25 ? "Week 1" : 
+                         milestone.targetMonth === 1 ? "Month 1" :
+                         `Month ${milestone.targetMonth}`}
                       </span>
                       <div className="flex items-center space-x-2">
                         <Button

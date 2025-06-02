@@ -149,16 +149,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Try AI first, fallback to contextual questions if quota exceeded
       try {
-        const prompt = `Generate exactly 5 personalized questions to help someone create a detailed action plan for achieving their goal: "${goalTitle}" within a ${timeline.replace('_', ' ')} timeframe.
+        const prompt = `Generate exactly 5 simple, easy-to-answer questions for someone working on: "${goalTitle}" in ${timeline.replace('_', ' ')}.
 
-The questions should help understand:
-1. Current situation and starting point
-2. Available resources and constraints
-3. Past experience and challenges
-4. Motivation and commitment level
-5. Specific preferences and circumstances
+Make questions conversational and specific. Focus on:
+1. Where they are now (current state)
+2. What time they have available
+3. What they prefer or enjoy
+4. What has worked/not worked before
+5. What success looks like to them
 
-Return only a JSON object with a "questions" array containing exactly 5 strings. Each question should be direct, actionable, and help create a personalized roadmap.`;
+Keep questions under 15 words each. Make them feel like a friendly conversation, not an interview.
+
+Return only a JSON object with a "questions" array containing exactly 5 simple question strings.`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -255,14 +257,18 @@ Return only a JSON object with a "questions" array containing exactly 5 strings.
 
 ${qaText}
 
-Create a personalized roadmap with exactly 3 milestones. Each milestone should have:
-- A clear, specific title
-- Target month (distributed evenly: month ${Math.ceil(timelineMonths/3)}, ${Math.ceil(timelineMonths*2/3)}, ${timelineMonths})
-- Exactly 3 concrete, actionable steps
+Create a detailed roadmap with milestones covering: Week 1, Month 1, Month 3, Month 6, Month 9, and Month 12 (adjust to fit ${timelineMonths} month timeline).
 
-Return only a JSON object with a "milestones" array. Each milestone should have: title, targetMonth, and actions array with 3 objects containing "title" field.
+Each milestone should have:
+- Clear, specific title
+- Target timeframe (week 1, month 1, 3, 6, 9, or 12)
+- 3-5 concrete, actionable steps
 
-Make the milestones and actions specific to the user's situation based on their answers.`;
+Start with immediate actions in week 1, then build momentum through month 1, then set larger goals for 3, 6, 9, and 12 months.
+
+Return JSON with "milestones" array. Each milestone has: title, targetMonth (use 0.25 for week 1, 1 for month 1, etc), and actions array with title field.
+
+Make it specific to their answers and progressively challenging.`;
 
         const response = await openai.chat.completions.create({
           model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
@@ -295,35 +301,69 @@ Make the milestones and actions specific to the user's situation based on their 
     
     // Fitness/Health goals
     if (goal.includes('shape') || goal.includes('fit') || goal.includes('health') || goal.includes('weight') || goal.includes('exercise')) {
-      return [
+      const milestones = [
         {
-          title: "Establish Consistent Exercise Routine",
-          targetMonth: Math.ceil(timelineMonths/3),
+          title: "Get Started This Week",
+          targetMonth: 0.25,
           actions: [
-            { title: "Choose 3-4 workout days per week and stick to schedule" },
-            { title: "Set up workout space or gym membership" },
-            { title: "Track daily activities and establish baseline fitness level" }
+            { title: "Schedule 3 workout days this week" },
+            { title: "Take baseline measurements and photos" },
+            { title: "Download a fitness tracking app" },
+            { title: "Clear out junk food from kitchen" }
           ]
         },
         {
-          title: "Build Strength and Endurance",
-          targetMonth: Math.ceil(timelineMonths*2/3),
+          title: "Build Your Foundation",
+          targetMonth: 1,
           actions: [
-            { title: "Increase workout intensity and duration gradually" },
-            { title: "Add variety with different types of exercise" },
-            { title: "Monitor progress and adjust nutrition plan" }
-          ]
-        },
-        {
-          title: "Achieve Target Fitness Level",
-          targetMonth: timelineMonths,
-          actions: [
-            { title: "Complete fitness assessment to measure improvement" },
-            { title: "Establish maintenance routine for long-term success" },
-            { title: "Set new goals for continued progress" }
+            { title: "Complete 4 weeks of consistent workouts" },
+            { title: "Establish healthy eating routine" },
+            { title: "Find workout buddy or join fitness community" },
+            { title: "Track progress and adjust plan as needed" }
           ]
         }
       ];
+      
+      if (timelineMonths >= 3) {
+        milestones.push({
+          title: "Level Up Your Fitness",
+          targetMonth: 3,
+          actions: [
+            { title: "Increase workout intensity and duration" },
+            { title: "Try new types of exercise for variety" },
+            { title: "See noticeable improvements in strength/endurance" },
+            { title: "Refine nutrition plan based on results" }
+          ]
+        });
+      }
+      
+      if (timelineMonths >= 6) {
+        milestones.push({
+          title: "Hit Your Stride",
+          targetMonth: 6,
+          actions: [
+            { title: "Achieve significant fitness improvements" },
+            { title: "Set new challenging but achievable goals" },
+            { title: "Help or inspire someone else to get started" },
+            { title: "Plan active vacation or fitness event" }
+          ]
+        });
+      }
+      
+      if (timelineMonths >= 12) {
+        milestones.push({
+          title: "Master Your Fitness Journey",
+          targetMonth: 12,
+          actions: [
+            { title: "Achieve original fitness goals" },
+            { title: "Develop sustainable long-term habits" },
+            { title: "Set ambitious new fitness challenges" },
+            { title: "Share your transformation story" }
+          ]
+        });
+      }
+      
+      return milestones;
     }
     
     // Learning goals
