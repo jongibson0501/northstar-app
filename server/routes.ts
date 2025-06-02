@@ -227,15 +227,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const timelineText = timeline.replace('_', ' ');
       
-      const prompt = `Create a complete, actionable roadmap for someone who wants to achieve: "${goalTitle}" in ${timelineText}.
+      const timelineMonths = timeline === "1_month" ? 1 : timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
+      
+      const prompt = `Create a complete, actionable roadmap for someone who wants to achieve: "${goalTitle}" in exactly ${timelineText} (${timelineMonths} months total).
 
-Generate exactly 6 progressive milestones with these specific timeframes:
-1. Week 1 - Immediate start actions
-2. Month 1 - Building foundation
-3. Month 2 - Developing skills
-4. Month 3 - Applying knowledge
-5. Month 4-5 - Advanced practice (if timeline allows)
-6. Final month - Mastery and goals completion
+CRITICAL: This plan must fit within exactly ${timelineMonths} months. Do not exceed this timeframe.
+
+Generate exactly 6 progressive milestones distributed across ${timelineMonths} months:
+${timelineMonths === 1 ? `
+1. Week 1 - Foundation setup
+2. Week 2 - Initial practice  
+3. Week 3 - Skill building
+4. Week 4 - Application
+5. Month 1 end - Integration
+6. Month 1 final - Achievement` : timelineMonths === 3 ? `
+1. Week 1-2 - Foundation setup
+2. Month 1 - Basic skills
+3. Month 2 start - Intermediate practice
+4. Month 2 end - Application
+5. Month 3 start - Advanced techniques
+6. Month 3 end - Mastery achievement` : `
+1. Month 1 - Foundation
+2. Month 2 - Basic skills
+3. Month 3-4 - Intermediate practice
+4. Month 4-5 - Application
+5. Month 5-6 - Advanced techniques
+6. Month ${timelineMonths} - Final mastery`}
 
 Each milestone should have 4-5 specific, actionable tasks that build progressively toward the goal.
 
@@ -253,7 +270,7 @@ Return as JSON:
   ]
 }
 
-Make this plan specific to "${goalTitle}" with realistic, achievable tasks.`;
+Make this plan specific to "${goalTitle}" with realistic, achievable tasks within ${timelineMonths} months.`;
 
       let result;
       
