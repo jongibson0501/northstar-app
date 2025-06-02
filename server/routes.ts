@@ -185,13 +185,10 @@ Return only a JSON object with a "questions" array containing exactly 5 simple q
         const result = JSON.parse(response.choices[0].message.content || '{"questions": []}');
         res.json(result);
       } catch (aiError: any) {
-        if (aiError.status === 429) {
-          // Generate contextual questions based on goal type
-          const questions = generateContextualQuestions(goalTitle, timeline);
-          res.json({ questions });
-        } else {
-          throw aiError;
-        }
+        console.error("OpenAI API error:", aiError);
+        // Use fallback for any OpenAI error (rate limit, invalid key, etc.)
+        const questions = generateContextualQuestions(goalTitle, timeline);
+        res.json({ questions });
       }
     } catch (error) {
       console.error("Error generating questions:", error);
@@ -244,6 +241,17 @@ Return only a JSON object with a "questions" array containing exactly 5 simple q
         `What are your main expenses and where do you see potential opportunities to optimize your budget?`,
         `Have you tried saving or budgeting strategies before? What worked and what didn't?`,
         `What would achieving this financial goal enable you to do that you can't do now?`
+      ];
+    }
+    
+    // Cooking goals
+    if (goal.includes('cook') || goal.includes('chef') || goal.includes('kitchen') || goal.includes('recipe') || goal.includes('baking')) {
+      return [
+        `What is your current cooking experience and what types of dishes can you make now?`,
+        `How often do you cook and how much time can you dedicate to cooking practice each week?`,
+        `What kitchen equipment and tools do you currently have access to?`,
+        `What specific cooking skills or cuisines are you most interested in learning?`,
+        `What would being "good at cooking" look like to you - hosting dinner parties, making restaurant-quality meals, or something else?`
       ];
     }
     
