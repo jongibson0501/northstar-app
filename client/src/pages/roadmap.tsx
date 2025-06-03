@@ -134,8 +134,11 @@ export default function Roadmap() {
               <CardContent className="p-4">
                 <h3 className="font-medium text-gray-800">{goal.title}</h3>
                 <p className="text-sm text-gray-600 mt-1">
-                  Target: {goal.timeline === "3_months" ? "3 months" : 
-                          goal.timeline === "6_months" ? "6 months" : "1 year"} • {" "}
+                  Target: {goal.timeline === "1_month" ? "1 month" :
+                          goal.timeline === "3_months" ? "3 months" : 
+                          goal.timeline === "6_months" ? "6 months" :
+                          goal.timeline === "1_year" ? "1 year" :
+                          goal.timeline || "Custom timeline"} • {" "}
                   {goal.milestones ? goal.milestones.length : 0} milestones
                 </p>
               </CardContent>
