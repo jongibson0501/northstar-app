@@ -335,7 +335,8 @@ export default function PromptFlow() {
                 onClick={() => {
                   if (customTimeline.trim()) {
                     setIsGeneratingQuestions(true);
-                    generatePlanMutation.mutate();
+                    console.log('Starting plan generation with custom timeline:', customTimeline);
+                    generateMilestonesMutation.mutate();
                   }
                 }}
                 disabled={!customTimeline.trim() || isGeneratingQuestions}
