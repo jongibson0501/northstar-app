@@ -256,7 +256,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateGoal(goalId, { timeline });
       
       const timelineText = timeline.replace('_', ' ');
-      const timelineMonths = timeline === "1_month" ? 1 : timeline === "3_months" ? 3 : timeline === "6_months" ? 6 : 12;
+      let timelineMonths;
+      if (timeline === "1_month") {
+        timelineMonths = 1;
+      } else if (timeline === "3_months") {
+        timelineMonths = 3;
+      } else if (timeline === "6_months") {
+        timelineMonths = 6;
+      } else if (timeline === "1_year") {
+        timelineMonths = 12;
+      } else {
+        // Parse custom timeline (e.g., "8 months", "2 weeks", "18 months")
+        const timelineMatch = timeline.match(/(\d+)\s*(week|month|year)/i);
+        if (timelineMatch) {
+          const value = parseInt(timelineMatch[1]);
+          const unit = timelineMatch[2].toLowerCase();
+          if (unit.startsWith('week')) {
+            timelineMonths = Math.ceil(value / 4); // Convert weeks to months
+          } else if (unit.startsWith('month')) {
+            timelineMonths = value;
+          } else if (unit.startsWith('year')) {
+            timelineMonths = value * 12;
+          } else {
+            timelineMonths = 6; // Default fallback
+          }
+        } else {
+          timelineMonths = 6; // Default fallback
+        }
+      }
       
       console.log('Timeline calculation:', { timeline, timelineText, timelineMonths });
       
@@ -277,9 +304,22 @@ timelineMonths === 3 ?
 3. Month 3: Mastery and achievement
 
 Each milestone should have 5-6 specific tasks.` :
-  `Create exactly 6 milestones for ${timelineMonths} months:
-Each milestone should represent approximately ${Math.round(timelineMonths/6)} month(s) of progress.
-Each milestone should have 4-5 specific tasks.`}
+timelineMonths === 6 ?
+  `Create exactly 6 milestones for 6 months:
+1. Month 1: Foundation
+2. Month 2: Basic skills
+3. Month 3: Intermediate practice
+4. Month 4: Advanced application
+5. Month 5: Refinement and mastery
+6. Month 6: Goal achievement
+
+Each milestone should have 4-5 specific tasks.` :
+timelineMonths === 12 ?
+  `Create exactly 12 milestones for 1 year (12 months):
+One milestone per month from Month 1 through Month 12.
+Each milestone should have 4-5 specific tasks.` :
+  `Create exactly ${timelineMonths} milestones for ${timelineMonths} months:
+One milestone per month. Each milestone should have 4-5 specific tasks.`}
 
 Return as JSON:
 {
@@ -322,15 +362,9 @@ Focus on realistic goals achievable within exactly ${timelineMonths} months.`;
         if (timelineMonths === 1) {
           // For 1-month: 4 milestones in month 1 (weeks 1-4)
           targetMonth = 1;
-        } else if (timelineMonths === 3) {
-          // For 3-month: distribute as 1, 2, 3
-          targetMonth = i + 1;
-        } else if (timelineMonths === 6) {
-          // For 6-month: distribute as 1, 2, 3, 4, 5, 6
-          targetMonth = i + 1;
         } else {
-          // For 12-month: distribute evenly
-          targetMonth = Math.ceil((i + 1) * (timelineMonths / result.milestones.length));
+          // For all other timelines: one milestone per month
+          targetMonth = i + 1;
         }
         
         console.log(`Creating milestone ${i + 1} with targetMonth: ${targetMonth} for ${timelineMonths}-month plan`);
