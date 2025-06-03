@@ -260,75 +260,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Timeline calculation:', { timeline, timelineText, timelineMonths });
       
-      let prompt;
-      if (timelineMonths === 3) {
-        prompt = `Create a 3-month fitness plan for: "${goalTitle}".
+      const prompt = `Create a ${timelineMonths}-month plan for: "${goalTitle}".
 
-STRICT REQUIREMENT: This is a 3-MONTH plan only. Do not create milestones beyond month 3.
+${timelineMonths === 1 ? 
+  `Create exactly 4 milestones for 1 month (4 weeks):
+1. Week 1: Foundation and setup
+2. Week 2: Initial progress  
+3. Week 3: Building momentum
+4. Week 4: Achievement
 
-Create exactly 6 milestones for a 3-month timeline:
-1. Weeks 1-2: Getting started and building foundation
-2. Month 1 end: Establishing routines and basic fitness
-3. Month 2 start: Increasing intensity and building strength
-4. Month 2 end: Developing endurance and consistency  
-5. Month 3 start: Advanced training and technique refinement
-6. Month 3 end: Achieving target fitness level
+Each milestone should have 3-4 specific tasks.` :
+timelineMonths === 3 ?
+  `Create exactly 3 milestones for 3 months:
+1. Month 1: Foundation and getting started
+2. Month 2: Building skills and consistency
+3. Month 3: Mastery and achievement
 
-Each milestone should have 4-5 specific, actionable fitness tasks.
-
-Return as JSON:
-{
-  "milestones": [
-    {
-      "title": "Milestone Name",
-      "timeframe": "Weeks 1-2",
-      "actions": [
-        {"title": "Specific fitness action"},
-        {"title": "Another specific action"}
-      ]
-    }
-  ]
-}
-
-Focus on realistic fitness goals achievable in exactly 3 months.`;
-      } else {
-        prompt = `Create a complete, actionable roadmap for someone who wants to achieve: "${goalTitle}" in exactly ${timelineText} (${timelineMonths} months total).
-
-CRITICAL: This plan must fit within exactly ${timelineMonths} months. Do not exceed this timeframe.
-
-Generate exactly 6 progressive milestones distributed across ${timelineMonths} months:
-${timelineMonths === 1 ? `
-1. Week 1 - Foundation setup
-2. Week 2 - Initial practice  
-3. Week 3 - Skill building
-4. Week 4 - Application
-5. Month 1 end - Integration
-6. Month 1 final - Achievement` : `
-1. Month 1 - Foundation
-2. Month 2 - Basic skills
-3. Month 3-4 - Intermediate practice
-4. Month 4-5 - Application
-5. Month 5-6 - Advanced techniques
-6. Month ${timelineMonths} - Final mastery`}
-
-Each milestone should have 4-5 specific, actionable tasks that build progressively toward the goal.
+Each milestone should have 5-6 specific tasks.` :
+  `Create exactly 6 milestones for ${timelineMonths} months:
+Each milestone should represent approximately ${Math.round(timelineMonths/6)} month(s) of progress.
+Each milestone should have 4-5 specific tasks.`}
 
 Return as JSON:
 {
   "milestones": [
     {
       "title": "Milestone Name",
-      "timeframe": "Week 1",
       "actions": [
-        {"title": "Specific action to take"},
-        {"title": "Another specific action"}
+        {"title": "Specific action"},
+        {"title": "Another action"}
       ]
     }
   ]
 }
 
-Make this plan specific to "${goalTitle}" with realistic, achievable tasks within ${timelineMonths} months.`;
-      }
+Focus on realistic goals achievable within exactly ${timelineMonths} months.`;
 
       let result;
       
@@ -351,20 +317,20 @@ Make this plan specific to "${goalTitle}" with realistic, achievable tasks withi
       for (let i = 0; i < result.milestones.length; i++) {
         const milestone = result.milestones[i];
         
-        // Calculate target month based on selected timeline (using integers only)
+        // Calculate target month based on selected timeline
         let targetMonth;
         if (timelineMonths === 1) {
-          // For 1-month: distribute as 1, 1, 1, 1, 1, 1 (all in month 1)
+          // For 1-month: 4 milestones in month 1 (weeks 1-4)
           targetMonth = 1;
         } else if (timelineMonths === 3) {
-          // For 3-month: distribute as 1, 1, 2, 2, 3, 3
-          targetMonth = Math.min(3, Math.ceil((i + 1) / 2));
+          // For 3-month: distribute as 1, 2, 3
+          targetMonth = i + 1;
         } else if (timelineMonths === 6) {
           // For 6-month: distribute as 1, 2, 3, 4, 5, 6
           targetMonth = i + 1;
         } else {
-          // For 12-month: distribute as 2, 4, 6, 8, 10, 12
-          targetMonth = (i + 1) * 2;
+          // For 12-month: distribute evenly
+          targetMonth = Math.ceil((i + 1) * (timelineMonths / result.milestones.length));
         }
         
         console.log(`Creating milestone ${i + 1} with targetMonth: ${targetMonth} for ${timelineMonths}-month plan`);
