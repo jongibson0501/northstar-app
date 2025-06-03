@@ -351,14 +351,14 @@ Make this plan specific to "${goalTitle}" with realistic, achievable tasks withi
       for (let i = 0; i < result.milestones.length; i++) {
         const milestone = result.milestones[i];
         
-        // Calculate target month based on selected timeline
+        // Calculate target month based on selected timeline (using integers only)
         let targetMonth;
         if (timelineMonths === 1) {
-          // For 1-month: distribute as 0.25, 0.5, 0.75, 1, 1, 1
-          targetMonth = Math.min(1, (i + 1) * 0.25);
+          // For 1-month: distribute as 1, 1, 1, 1, 1, 1 (all in month 1)
+          targetMonth = 1;
         } else if (timelineMonths === 3) {
-          // For 3-month: distribute as 0.5, 1, 1.5, 2, 2.5, 3
-          targetMonth = Math.min(3, (i + 1) * 0.5);
+          // For 3-month: distribute as 1, 1, 2, 2, 3, 3
+          targetMonth = Math.min(3, Math.ceil((i + 1) / 2));
         } else if (timelineMonths === 6) {
           // For 6-month: distribute as 1, 2, 3, 4, 5, 6
           targetMonth = i + 1;
