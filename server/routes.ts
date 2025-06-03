@@ -347,15 +347,33 @@ Make this plan specific to "${goalTitle}" with realistic, achievable tasks withi
         result = { milestones: generateContextualPlan(goalTitle, timelineText) };
       }
       
-      // Save the generated plan to database
+      // Save the generated plan to database with proper timeline distribution
       for (let i = 0; i < result.milestones.length; i++) {
         const milestone = result.milestones[i];
+        
+        // Calculate target month based on selected timeline
+        let targetMonth;
+        if (timelineMonths === 1) {
+          // For 1-month: distribute as 0.25, 0.5, 0.75, 1, 1, 1
+          targetMonth = Math.min(1, (i + 1) * 0.25);
+        } else if (timelineMonths === 3) {
+          // For 3-month: distribute as 0.5, 1, 1.5, 2, 2.5, 3
+          targetMonth = Math.min(3, (i + 1) * 0.5);
+        } else if (timelineMonths === 6) {
+          // For 6-month: distribute as 1, 2, 3, 4, 5, 6
+          targetMonth = i + 1;
+        } else {
+          // For 12-month: distribute as 2, 4, 6, 8, 10, 12
+          targetMonth = (i + 1) * 2;
+        }
+        
+        console.log(`Creating milestone ${i + 1} with targetMonth: ${targetMonth} for ${timelineMonths}-month plan`);
         
         const savedMilestone = await storage.createMilestone({
           goalId,
           title: milestone.title,
           description: "",
-          targetMonth: i + 1,
+          targetMonth: targetMonth,
           orderIndex: i,
           isCompleted: false,
           completedAt: null,
