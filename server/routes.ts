@@ -74,7 +74,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put('/api/goals/:id', isAuthenticated, async (req: any, res) => {
     try {
       const goalId = parseInt(req.params.id);
-      const updates = insertGoalSchema.partial().parse(req.body);
+      const updates = req.body;
+      
+      // Convert completedAt string to Date if present
+      if (updates.completedAt && typeof updates.completedAt === 'string') {
+        updates.completedAt = new Date(updates.completedAt);
+      }
+      
       const goal = await storage.updateGoal(goalId, updates);
       res.json(goal);
     } catch (error) {
