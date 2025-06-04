@@ -3,50 +3,53 @@
 @tailwind utilities;
 
 :root {
-  --background: 250 250 250; /* #FAFAFA */
-  --foreground: 60 9% 15%; /* #424242 */
-  --muted: 0 0% 96%; /* #F5F5F5 */
-  --muted-foreground: 0 0% 45%; /* #737373 */
-  --popover: 0 0% 100%; /* #FFFFFF */
-  --popover-foreground: 60 9% 15%; /* #424242 */
-  --card: 0 0% 100%; /* #FFFFFF */
-  --card-foreground: 60 9% 15%; /* #424242 */
-  --border: 0 0% 90%; /* #E5E5E5 */
-  --input: 0 0% 90%; /* #E5E5E5 */
-  --primary: 207 90% 54%; /* #1976D2 */
-  --primary-foreground: 0 0% 100%; /* #FFFFFF */
-  --secondary: 0 0% 96%; /* #F5F5F5 */
-  --secondary-foreground: 60 9% 15%; /* #424242 */
-  --accent: 16 90% 62%; /* #FF7043 */
-  --accent-foreground: 0 0% 100%; /* #FFFFFF */
-  --destructive: 0 84% 60%; /* #F44336 */
-  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
-  --success: 123 46% 55%; /* #4CAF50 */
-  --ring: 207 90% 54%; /* #1976D2 */
-  --radius: 0.5rem;
+  /* Northstar Brand Colors */
+  --background: 210 32% 96%; /* Light cream background */
+  --foreground: 214 42% 16%; /* Deep navy text */
+  --muted: 214 25% 90%; /* Light blue-gray */
+  --muted-foreground: 214 25% 45%; /* Medium blue-gray */
+  --popover: 0 0% 100%; /* Pure white */
+  --popover-foreground: 214 42% 16%; /* Deep navy */
+  --card: 0 0% 100%; /* Pure white cards */
+  --card-foreground: 214 42% 16%; /* Deep navy */
+  --border: 214 25% 88%; /* Subtle border */
+  --input: 214 25% 88%; /* Input background */
+  --primary: 214 42% 24%; /* Northstar navy blue */
+  --primary-foreground: 210 32% 96%; /* Light cream */
+  --secondary: 214 25% 85%; /* Light blue-gray */
+  --secondary-foreground: 214 42% 16%; /* Deep navy */
+  --accent: 45 96% 89%; /* Warm cream accent */
+  --accent-foreground: 214 42% 16%; /* Deep navy */
+  --destructive: 0 84% 60%; /* Error red */
+  --destructive-foreground: 0 0% 100%; /* White */
+  --success: 142 76% 36%; /* Modern green */
+  --success-foreground: 210 32% 96%; /* Light cream */
+  --ring: 214 42% 24%; /* Northstar navy */
+  --radius: 0.75rem;
 }
 
 .dark {
-  --background: 240 10% 4%; /* #0A0A0B */
-  --foreground: 0 0% 95%; /* #F2F2F2 */
-  --muted: 240 4% 16%; /* #26262A */
-  --muted-foreground: 240 5% 65%; /* #A1A1AA */
-  --popover: 240 10% 4%; /* #0A0A0B */
-  --popover-foreground: 0 0% 95%; /* #F2F2F2 */
-  --card: 240 10% 4%; /* #0A0A0B */
-  --card-foreground: 0 0% 95%; /* #F2F2F2 */
-  --border: 240 4% 16%; /* #26262A */
-  --input: 240 4% 16%; /* #26262A */
-  --primary: 207 90% 54%; /* #1976D2 */
-  --primary-foreground: 0 0% 100%; /* #FFFFFF */
-  --secondary: 240 4% 16%; /* #26262A */
-  --secondary-foreground: 0 0% 95%; /* #F2F2F2 */
-  --accent: 16 90% 62%; /* #FF7043 */
-  --accent-foreground: 0 0% 100%; /* #FFFFFF */
-  --destructive: 0 84% 60%; /* #F44336 */
-  --destructive-foreground: 0 0% 100%; /* #FFFFFF */
-  --success: 123 46% 55%; /* #4CAF50 */
-  --ring: 207 90% 54%; /* #1976D2 */
+  --background: 214 42% 16%; /* Deep navy background */
+  --foreground: 210 32% 96%; /* Light cream text */
+  --muted: 214 35% 25%; /* Dark blue-gray */
+  --muted-foreground: 214 25% 65%; /* Medium blue-gray */
+  --popover: 214 38% 20%; /* Slightly lighter navy */
+  --popover-foreground: 210 32% 96%; /* Light cream */
+  --card: 214 38% 20%; /* Card background */
+  --card-foreground: 210 32% 96%; /* Light cream */
+  --border: 214 35% 28%; /* Border in dark mode */
+  --input: 214 35% 28%; /* Input background */
+  --primary: 45 96% 89%; /* Cream primary in dark mode */
+  --primary-foreground: 214 42% 16%; /* Deep navy */
+  --secondary: 214 35% 28%; /* Secondary background */
+  --secondary-foreground: 210 32% 96%; /* Light cream */
+  --accent: 214 42% 24%; /* Navy accent */
+  --accent-foreground: 210 32% 96%; /* Light cream */
+  --destructive: 0 62% 50%; /* Darker red for dark mode */
+  --destructive-foreground: 210 32% 96%; /* Light cream */
+  --success: 142 76% 36%; /* Green stays same */
+  --success-foreground: 210 32% 96%; /* Light cream */
+  --ring: 45 96% 89%; /* Cream ring */
 }
 
 @layer base {
@@ -56,7 +59,47 @@
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
+}
+
+/* Northstar Star Icon Animation */
+@keyframes star-glow {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+  }
+  50% { 
+    transform: scale(1.05) rotate(180deg);
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.5));
+  }
+}
+
+.star-glow {
+  animation: star-glow 4s ease-in-out infinite;
+}
+
+/* Custom gradient backgrounds */
+.northstar-gradient {
+  background: linear-gradient(135deg, hsl(214, 42%, 16%) 0%, hsl(214, 42%, 24%) 100%);
+}
+
+.northstar-card-gradient {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced button styles */
+.btn-northstar {
+  background: linear-gradient(135deg, hsl(214, 42%, 24%) 0%, hsl(214, 42%, 20%) 100%);
+  box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.btn-northstar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(0, 0, 0, 0.15);
 }
 
 /* Custom styles for mobile-first design */
@@ -65,7 +108,7 @@
 }
 
 .primary-dark {
-  color: hsl(207 90% 48%); /* #1565C0 */
+  color: hsl(214 42% 20%);
 }
 
 .secondary {
