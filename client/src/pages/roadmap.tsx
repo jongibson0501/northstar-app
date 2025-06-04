@@ -165,6 +165,9 @@ export default function Roadmap() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-accent">
                         {milestone.targetMonth === 0.25 ? "Week 1" : 
+                         milestone.targetMonth === 0.5 ? "Week 2" :
+                         milestone.targetMonth === 0.75 ? "Week 3" :
+                         milestone.targetMonth === 1 && goal.timeline === "1_month" ? "Week 4" :
                          milestone.targetMonth === 1 ? "Month 1" :
                          `Month ${milestone.targetMonth}`}
                       </span>

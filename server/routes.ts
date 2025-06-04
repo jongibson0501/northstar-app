@@ -360,8 +360,8 @@ Focus on realistic goals achievable within exactly ${timelineMonths} months.`;
         // Calculate target month based on selected timeline
         let targetMonth;
         if (timelineMonths === 1) {
-          // For 1-month: 4 milestones in month 1 (weeks 1-4)
-          targetMonth = 1;
+          // For 1-month: 4 milestones representing weeks 1-4
+          targetMonth = (i + 1) * 0.25; // 0.25, 0.5, 0.75, 1.0 for weeks 1-4
         } else {
           // For all other timelines: one milestone per month
           targetMonth = i + 1;
