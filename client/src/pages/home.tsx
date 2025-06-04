@@ -3,8 +3,6 @@ import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { NorthstarLogo } from "@/components/NorthstarLogo";
 import { useState } from "react";
 import { Target, TrendingUp, Plus, Trash2, Trophy, LogOut } from "lucide-react";
@@ -18,40 +16,10 @@ export default function Home() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const [goalDescription, setGoalDescription] = useState("");
-  const [showInput, setShowInput] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
 
   const { data: goals, isLoading } = useQuery<GoalWithMilestones[]>({
     queryKey: ["/api/goals"],
-  });
-
-  const createGoalMutation = useMutation({
-    mutationFn: async (description: string) => {
-      const response = await apiRequest("POST", "/api/goals", {
-        title: description.slice(0, 100),
-        description,
-        timeline: "3_months",
-        status: "active",
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
-      setGoalDescription("");
-      setShowInput(false);
-      toast({
-        title: "Goal Created",
-        description: "Your goal has been created successfully!",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create goal. Please try again.",
-        variant: "destructive",
-      });
-    },
   });
 
   const deleteGoalMutation = useMutation({
@@ -74,18 +42,6 @@ export default function Home() {
       });
     },
   });
-
-  const handleCreateGoal = () => {
-    if (!goalDescription.trim()) {
-      toast({
-        title: "Error",
-        description: "Please describe your goal",
-        variant: "destructive",
-      });
-      return;
-    }
-    createGoalMutation.mutate(goalDescription);
-  };
 
   const calculateProgress = (goal: GoalWithMilestones) => {
     const totalMilestones = goal.milestones.length;
@@ -146,147 +102,119 @@ export default function Home() {
 
           {/* Active Goals Tab */}
           <TabsContent value="active" className="p-4 space-y-4">
-            {/* Goal Input Section */}
-            <section>
-              {!showInput ? (
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Target className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-medium text-gray-800 mb-2">What's your goal?</h2>
-                  <p className="text-gray-600 mb-6">Tell us what you want to achieve, and we'll help you build a roadmap</p>
-                  
+            {/* Add Goal Button */}
+            {activeGoals.length === 0 && (
+              <div className="text-center mb-6 p-6">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Target className="w-8 h-8 text-primary" />
+                </div>
+                <h2 className="text-2xl font-medium text-card-foreground mb-2">Ready to start?</h2>
+                <p className="text-muted-foreground mb-6">Create your first goal and build a roadmap to success</p>
+                
+                <Button 
+                  onClick={() => setLocation('/new-goal')}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 rounded-xl font-medium transition-all duration-300 hover:transform hover:scale-105"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  Add New Goal
+                </Button>
+              </div>
+            )}
+
+            {/* Active Goals List */}
+            {activeGoals.length > 0 && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-card-foreground">Active Goals</h3>
                   <Button 
-                    onClick={() => setShowInput(true)}
-                    className="w-full bg-primary hover:bg-primary-dark text-white py-4 rounded-lg font-medium"
+                    onClick={() => setLocation('/new-goal')}
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Add New Goal
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add
                   </Button>
                 </div>
-              ) : (
-                <div className="space-y-4 mb-6">
-                  <div>
-                    <Label className="block text-sm font-medium text-gray-700 mb-2">
-                      Describe your goal
-                    </Label>
-                    <Textarea
-                      placeholder="e.g., Get in shape, Start a side hustle, Learn a new language..."
-                      className="w-full p-4 border-2 border-gray-200 rounded-lg focus:border-primary focus:outline-none resize-none h-32 text-gray-800"
-                      value={goalDescription}
-                      onChange={(e) => setGoalDescription(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <Button 
-                      onClick={handleCreateGoal}
-                      disabled={createGoalMutation.isPending}
-                      className="flex-1 bg-primary hover:bg-primary-dark text-white py-4 rounded-lg font-medium"
-                    >
-                      {createGoalMutation.isPending ? "Creating..." : "Start Planning"}
-                    </Button>
-                    <Button 
-                      onClick={() => setShowInput(false)}
-                      variant="outline"
-                      className="px-6 py-4"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Active Goals List */}
-              {activeGoals.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-4">Active Goals</h3>
-                  <div className="space-y-3">
-                    {activeGoals.map((goal) => {
-                      const progress = calculateProgress(goal);
-                      const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
-                      
-                      return (
-                        <Card key={goal.id} className="hover:shadow-md transition-shadow">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <Link href={`/goals/${goal.id}`} className="flex-1 cursor-pointer">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-gray-800 mb-1">
-                                      {goal.title}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                      {completedMilestones} of {goal.milestones.length} milestones completed
-                                    </p>
-                                  </div>
-                                  <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
-                                    <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center">
-                                      <span className="text-white text-xs font-medium">
-                                        {progress}%
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </Link>
+                <div className="space-y-3">
+                  {activeGoals.map((goal) => {
+                    const progress = calculateProgress(goal);
+                    return (
+                      <Card key={goal.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <Link href={`/goals/${goal.id}`} className="block cursor-pointer">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium text-card-foreground flex-1 pr-4">
+                                {goal.title}
+                              </h4>
                               <Button
-                                variant="ghost"
-                                size="sm"
-                                className="ml-2 text-red-500 hover:text-red-700 hover:bg-red-50"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  deleteGoalMutation.mutate(goal.id);
+                                  if (confirm('Are you sure you want to delete this goal?')) {
+                                    deleteGoalMutation.mutate(goal.id);
+                                  }
                                 }}
+                                variant="ghost"
+                                size="sm"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-3 h-3 bg-primary rounded-full"></div>
+                                <span className="text-sm text-muted-foreground">
+                                  {goal.milestones.length} milestones
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <div className="text-sm font-medium text-primary">
+                                  {progress}%
+                                </div>
+                                <TrendingUp className="w-4 h-4 text-primary" />
+                              </div>
+                            </div>
+                            <div className="w-full bg-secondary rounded-full h-2 mt-2">
+                              <div 
+                                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                                style={{ width: `${progress}%` }}
+                              ></div>
+                            </div>
+                          </Link>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
-              )}
-
-              {activeGoals.length === 0 && !showInput && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Target className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-600">No active goals yet. Create your first goal to get started!</p>
-                </div>
-              )}
-            </section>
+              </div>
+            )}
           </TabsContent>
 
           {/* Completed Goals Tab */}
           <TabsContent value="completed" className="p-4 space-y-4">
             {completedGoals.length > 0 ? (
               <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Completed Goals</h3>
+                <h3 className="text-lg font-medium text-card-foreground mb-4">Completed Goals</h3>
                 <div className="space-y-3">
                   {completedGoals.map((goal) => (
-                    <Card key={goal.id} className="hover:shadow-md transition-shadow border-green-200 bg-green-50">
+                    <Card key={goal.id} className="hover:shadow-md transition-shadow border-success/20 bg-success/5">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <Link href={`/goals/${goal.id}`} className="flex-1 cursor-pointer">
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-800 mb-1">
-                                  {goal.title}
-                                </h4>
-                                <p className="text-sm text-green-600">
-                                  Completed on {goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : 'Unknown'}
-                                </p>
-                              </div>
-                              <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
-                                <Trophy className="w-6 h-6 text-green-500" />
-                              </div>
+                        <Link href={`/goals/${goal.id}`} className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-medium text-card-foreground mb-1">
+                                {goal.title}
+                              </h4>
+                              <p className="text-sm text-success">
+                                Completed on {goal.completedAt ? new Date(goal.completedAt).toLocaleDateString() : 'Unknown'}
+                              </p>
                             </div>
-                          </Link>
-                        </div>
+                            <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
+                              <Trophy className="w-6 h-6 text-success" />
+                            </div>
+                          </div>
+                        </Link>
                       </CardContent>
                     </Card>
                   ))}
@@ -294,8 +222,8 @@ export default function Home() {
                 
                 <div className="text-center pt-6">
                   <Button 
-                    onClick={() => setLocation("/goal-input")}
-                    className="bg-primary hover:bg-primary/90 text-white"
+                    onClick={() => setLocation('/new-goal')}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Create New Goal
@@ -304,11 +232,11 @@ export default function Home() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Trophy className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Trophy className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No completed goals yet</h3>
-                <p className="text-gray-600 mb-6">Complete your first goal to see it here!</p>
+                <h3 className="text-lg font-medium text-card-foreground mb-2">No completed goals yet</h3>
+                <p className="text-muted-foreground mb-6">Complete your first goal to see it here!</p>
                 <Button 
                   onClick={() => setActiveTab("active")}
                   variant="outline"

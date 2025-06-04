@@ -28,7 +28,7 @@ export default function GoalInput() {
     },
     onSuccess: (goal) => {
       queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
-      setLocation(`/goals/${goal.id}/plan`);
+      setLocation(`/goals/${goal.id}`);
       toast({
         title: "Goal Created",
         description: "Let's plan your journey!",
