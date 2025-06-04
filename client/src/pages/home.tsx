@@ -5,8 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { NorthstarLogo } from "@/components/NorthstarLogo";
 import { useState } from "react";
-import { Target, TrendingUp, Plus, Trash2, Trophy } from "lucide-react";
+import { Target, TrendingUp, Plus, Trash2, Trophy, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation } from "wouter";
@@ -105,11 +106,27 @@ export default function Home() {
   const completedGoals = goals?.filter(goal => goal.status === "completed") || [];
 
   return (
-    <div className="min-h-screen bg-background text-secondary pb-20">
-      <div className="max-w-md mx-auto bg-white shadow-xl min-h-screen">
+    <div className="min-h-screen bg-background text-foreground pb-20">
+      <div className="max-w-md mx-auto bg-card shadow-xl min-h-screen">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
-          <h1 className="text-xl font-medium text-gray-800">Your Goals</h1>
+        <div className="bg-primary text-primary-foreground p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <NorthstarLogo size={32} className="text-primary-foreground" />
+              <div>
+                <h1 className="text-lg font-semibold">Your Goals</h1>
+                <p className="text-sm text-primary-foreground/80">Welcome back!</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.href = '/api/logout'}
+              className="text-primary-foreground hover:bg-primary-foreground/10"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
