@@ -131,16 +131,18 @@ export default function Home() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mx-4 mt-4">
-            <TabsTrigger value="active" className="flex items-center space-x-2">
-              <Target className="w-4 h-4" />
-              <span>Active ({activeGoals.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center space-x-2">
-              <Trophy className="w-4 h-4" />
-              <span>Completed ({completedGoals.length})</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="px-6 pt-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="active" className="flex items-center justify-center space-x-2">
+                <Target className="w-4 h-4" />
+                <span>Active ({activeGoals.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="flex items-center justify-center space-x-2">
+                <Trophy className="w-4 h-4" />
+                <span>Completed ({completedGoals.length})</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Active Goals Tab */}
           <TabsContent value="active" className="p-4 space-y-4">
