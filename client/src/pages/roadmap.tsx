@@ -27,7 +27,7 @@ export default function Roadmap() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/goals", goalId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/goals/${goalId}`] });
       queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
     },
   });
@@ -38,7 +38,7 @@ export default function Roadmap() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/goals", goalId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/goals/${goalId}`] });
     },
   });
 
