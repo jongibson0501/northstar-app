@@ -48,6 +48,7 @@ export const goals = pgTable("goals", {
   timeline: varchar("timeline").notNull(), // "3_months", "6_months", "1_year", "custom"
   timelineValue: integer("timeline_value"), // for custom timeline in months
   status: varchar("status").default("active"), // "active", "completed", "paused"
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

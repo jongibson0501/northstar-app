@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Check } from "lucide-react";
+import { Edit, Check, Trophy, Sparkles } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -15,6 +15,7 @@ export default function Roadmap() {
   const [, setLocation] = useLocation();
   const goalId = params?.id ? parseInt(params.id) : null;
   const { toast } = useToast();
+  const [showCelebration, setShowCelebration] = useState(false);
   
   const { data: goal, isLoading } = useQuery<GoalWithMilestones>({
     queryKey: [`/api/goals/${goalId}`],
@@ -68,11 +69,38 @@ export default function Roadmap() {
     clearPlanMutation.mutate();
   };
 
+  const completeGoalMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("PUT", `/api/goals/${goalId}`, {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/goals/${goalId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
+      setShowCelebration(true);
+    },
+  });
+
   const calculateProgress = () => {
     if (!goal?.milestones || goal.milestones.length === 0) return 0;
     const completedMilestones = goal.milestones.filter(m => m.isCompleted).length;
     return Math.round((completedMilestones / goal.milestones.length) * 100);
   };
+
+  // Check if goal is complete when milestones update
+  useEffect(() => {
+    if (goal && goal.milestones && goal.status !== "completed") {
+      const allMilestonesCompleted = goal.milestones.length > 0 && 
+        goal.milestones.every(milestone => milestone.isCompleted);
+      
+      if (allMilestonesCompleted) {
+        completeGoalMutation.mutate();
+      }
+    }
+  }, [goal?.milestones]);
 
   const toggleMilestone = (milestoneId: number, isCompleted: boolean) => {
     updateMilestoneMutation.mutate({
@@ -112,6 +140,54 @@ export default function Roadmap() {
 
   const progress = calculateProgress();
   const completedMilestones = goal.milestones ? goal.milestones.filter(m => m.isCompleted).length : 0;
+
+  // Celebration Screen
+  if (showCelebration) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto bg-white shadow-xl rounded-2xl p-8 text-center">
+          <div className="mb-6">
+            <div className="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trophy className="w-10 h-10 text-white" />
+            </div>
+            <div className="flex justify-center space-x-2 mb-4">
+              {[...Array(3)].map((_, i) => (
+                <Sparkles 
+                  key={i} 
+                  className="w-6 h-6 text-yellow-400 animate-pulse" 
+                  style={{ animationDelay: `${i * 0.2}s` }}
+                />
+              ))}
+            </div>
+          </div>
+          
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Congratulations!
+          </h1>
+          <p className="text-gray-600 mb-6">
+            You've successfully completed "{goal?.title}"! 
+            Your dedication and hard work have paid off.
+          </p>
+          
+          <div className="space-y-3">
+            <Button 
+              onClick={() => setLocation("/goal-input")}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-3"
+            >
+              Create New Goal
+            </Button>
+            <Button 
+              onClick={() => setLocation("/")}
+              variant="outline"
+              className="w-full"
+            >
+              View Completed Goals
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-secondary pb-20">
