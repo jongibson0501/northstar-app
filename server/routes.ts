@@ -327,7 +327,21 @@ Each milestone should have 4-5 specific tasks.` :
   `Create exactly ${timelineMonths} milestones for ${timelineMonths} months:
 One milestone per month. Each milestone should have 4-5 specific tasks.`}
 
-For each action, include helpful resources when relevant. Add a "resources" array with useful links for learning platforms, tools, or specific websites that would help complete that action.
+For each action, include 1-2 FREE resources from well-established platforms only. ONLY suggest resources that are:
+- Completely free to access (no paid subscriptions required)
+- From major, reliable platforms that won't result in 404 errors
+- Actually helpful for completing the specific action
+
+PRIORITIZE these trusted free platforms:
+- YouTube (use channel URLs like youtube.com/@channelname or search URLs)
+- Khan Academy (khanacademy.org)
+- freeCodeCamp (freecodecamp.org)
+- Coursera free courses (coursera.org - audit track only)
+- MDN Web Docs (developer.mozilla.org)
+- W3Schools (w3schools.com)
+- GitHub repositories (github.com)
+- Official documentation sites
+- Government/educational institution sites (.edu, .gov)
 
 Return as JSON:
 {
@@ -338,7 +352,8 @@ Return as JSON:
         {
           "title": "Specific action",
           "resources": [
-            {"name": "Platform/Tool Name", "url": "https://example.com", "type": "learning|tool|platform"}
+            {"name": "Free Resource Name", "url": "https://reliablesite.com", "type": "tutorial"},
+            {"name": "YouTube Channel", "url": "https://youtube.com/@channel", "type": "video"}
           ]
         }
       ]
@@ -346,12 +361,8 @@ Return as JSON:
   ]
 }
 
-Include resources for:
-- Learning platforms (Coursera, YouTube, Khan Academy, Udemy)
-- Tools and apps relevant to the goal
-- Official websites or documentation
-- Practice platforms or communities
-- Free resources when possible
+Resource types: "tutorial", "documentation", "video", "course", "tool"
+AVOID: Paid platforms, obscure websites, specific course URLs that might expire
 
 Focus on realistic goals achievable within exactly ${timelineMonths} months.`;
 
