@@ -404,6 +404,7 @@ Focus on realistic goals achievable within exactly ${timelineMonths} months.`;
             milestoneId: savedMilestone.id,
             title: action.title,
             description: "",
+            resources: action.resources || null,
             orderIndex: j,
             isCompleted: false,
             completedAt: null,

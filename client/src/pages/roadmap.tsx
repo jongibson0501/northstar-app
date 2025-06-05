@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Edit, Check, Trophy, Sparkles } from "lucide-react";
+import { Edit, Check, Trophy, Sparkles, ExternalLink } from "lucide-react";
 import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -265,23 +265,41 @@ export default function Roadmap() {
                     <h5 className="text-sm font-medium text-gray-700 mb-3">Action Steps</h5>
                     <div className="space-y-2">
                       {milestone.actions.map((action) => (
-                        <div key={action.id} className="flex items-center space-x-3">
-                          <Checkbox
-                            checked={action.isCompleted || false}
-                            onCheckedChange={(checked) => 
-                              toggleAction(action.id, !!checked)
-                            }
-                            className="w-4 h-4"
-                          />
-                          <span 
-                            className={`text-sm flex-1 ${
-                              action.isCompleted 
-                                ? 'text-gray-500 line-through' 
-                                : 'text-gray-700'
-                            }`}
-                          >
-                            {action.title}
-                          </span>
+                        <div key={action.id} className="py-2 border-b border-gray-100 last:border-b-0">
+                          <div className="flex items-center space-x-3">
+                            <Checkbox
+                              checked={action.isCompleted || false}
+                              onCheckedChange={(checked) => 
+                                toggleAction(action.id, !!checked)
+                              }
+                              className="w-4 h-4"
+                            />
+                            <span 
+                              className={`text-sm flex-1 ${
+                                action.isCompleted 
+                                  ? 'text-gray-500 line-through' 
+                                  : 'text-gray-700'
+                              }`}
+                            >
+                              {action.title}
+                            </span>
+                          </div>
+                          {action.resources && action.resources.length > 0 && (
+                            <div className="mt-2 ml-7 flex flex-wrap gap-2">
+                              {action.resources.map((resource, idx) => (
+                                <a
+                                  key={idx}
+                                  href={resource.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center space-x-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded-full hover:bg-primary/20 transition-colors"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  <span>{resource.name}</span>
+                                </a>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                       {milestone.actions.length === 0 && (
