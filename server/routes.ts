@@ -327,18 +327,31 @@ Each milestone should have 4-5 specific tasks.` :
   `Create exactly ${timelineMonths} milestones for ${timelineMonths} months:
 One milestone per month. Each milestone should have 4-5 specific tasks.`}
 
+For each action, include helpful resources when relevant. Add a "resources" array with useful links for learning platforms, tools, or specific websites that would help complete that action.
+
 Return as JSON:
 {
   "milestones": [
     {
       "title": "Milestone Name",
       "actions": [
-        {"title": "Specific action"},
-        {"title": "Another action"}
+        {
+          "title": "Specific action",
+          "resources": [
+            {"name": "Platform/Tool Name", "url": "https://example.com", "type": "learning|tool|platform"}
+          ]
+        }
       ]
     }
   ]
 }
+
+Include resources for:
+- Learning platforms (Coursera, YouTube, Khan Academy, Udemy)
+- Tools and apps relevant to the goal
+- Official websites or documentation
+- Practice platforms or communities
+- Free resources when possible
 
 Focus on realistic goals achievable within exactly ${timelineMonths} months.`;
 

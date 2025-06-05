@@ -73,6 +73,7 @@ export const actions = pgTable("actions", {
   milestoneId: integer("milestone_id").notNull().references(() => milestones.id),
   title: text("title").notNull(),
   description: text("description"),
+  resources: jsonb("resources").$type<Array<{name: string, url: string, type: string}>>(),
   orderIndex: integer("order_index").notNull(),
   isCompleted: boolean("is_completed").default(false),
   completedAt: timestamp("completed_at"),
