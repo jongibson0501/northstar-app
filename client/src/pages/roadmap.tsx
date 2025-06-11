@@ -122,6 +122,37 @@ export default function Roadmap() {
     });
   };
 
+  // Auto-complete milestone when all actions are completed
+  useEffect(() => {
+    if (goal?.milestones) {
+      goal.milestones.forEach(milestone => {
+        if (milestone.actions.length > 0) {
+          const allActionsCompleted = milestone.actions.every(action => action.isCompleted);
+          const shouldCompleteMilestone = allActionsCompleted && !milestone.isCompleted;
+          const shouldUncompleteMilestone = !allActionsCompleted && milestone.isCompleted;
+          
+          if (shouldCompleteMilestone) {
+            updateMilestoneMutation.mutate({
+              milestoneId: milestone.id,
+              updates: { 
+                isCompleted: true,
+                completedAt: new Date().toISOString(),
+              },
+            });
+          } else if (shouldUncompleteMilestone) {
+            updateMilestoneMutation.mutate({
+              milestoneId: milestone.id,
+              updates: { 
+                isCompleted: false,
+                completedAt: null,
+              },
+            });
+          }
+        }
+      });
+    }
+  }, [goal?.milestones]);
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
