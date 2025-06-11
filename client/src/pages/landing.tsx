@@ -24,8 +24,8 @@ export default function Landing() {
           <div className="space-y-4">
             <Card className="northstar-card-gradient border-white/20">
               <CardContent className="p-4 flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Target className="w-6 h-6 text-sky-300" />
+                <div className="w-12 h-12 bg-sky-400/40 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Target className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-medium text-white">Goal Capture</h3>
@@ -36,8 +36,8 @@ export default function Landing() {
 
             <Card className="northstar-card-gradient border-white/20">
               <CardContent className="p-4 flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <Map className="w-6 h-6 text-sky-300" />
+                <div className="w-12 h-12 bg-sky-400/40 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <Map className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-medium text-white">Smart Planning</h3>
@@ -48,8 +48,8 @@ export default function Landing() {
 
             <Card className="northstar-card-gradient border-white/20">
               <CardContent className="p-4 flex items-center space-x-4">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                  <TrendingUp className="w-6 h-6 text-sky-300" />
+                <div className="w-12 h-12 bg-sky-400/40 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <TrendingUp className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-medium text-white">Visual Progress</h3>
