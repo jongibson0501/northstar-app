@@ -239,7 +239,7 @@ export default function Roadmap() {
                 <div className="ml-16 bg-surface border border-gray-200 rounded-lg shadow-sm">
                   <div className="p-4 border-b border-gray-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-accent">
+                      <span className="text-sm font-medium text-black">
                         {goal.timeline === "1_month" ? `Week ${milestone.targetMonth}` : `Month ${milestone.targetMonth}`}
                       </span>
                       <div className="flex items-center space-x-2">
