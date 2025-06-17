@@ -81,9 +81,36 @@ export const actions = pgTable("actions", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Daily check-ins table for nudges and reflections
+export const dailyCheckIns = pgTable("daily_check_ins", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  date: varchar("date").notNull(), // YYYY-MM-DD format
+  morningIntention: text("morning_intention"), // What's the ONE thing today?
+  selectedActionId: integer("selected_action_id").references(() => actions.id),
+  eveningAccomplished: boolean("evening_accomplished"), // Did you accomplish it?
+  eveningReflection: text("evening_reflection"), // Optional reflection notes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User notification preferences
+export const userPreferences = pgTable("user_preferences", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
+  morningNudgeTime: varchar("morning_nudge_time").default("09:00"), // HH:MM format
+  eveningNudgeTime: varchar("evening_nudge_time").default("20:00"), // HH:MM format
+  timezone: varchar("timezone").default("America/New_York"),
+  nudgesEnabled: boolean("nudges_enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   goals: many(goals),
+  dailyCheckIns: many(dailyCheckIns),
+  preferences: one(userPreferences),
 }));
 
 export const goalsRelations = relations(goals, ({ one, many }) => ({
@@ -102,10 +129,29 @@ export const milestonesRelations = relations(milestones, ({ one, many }) => ({
   actions: many(actions),
 }));
 
-export const actionsRelations = relations(actions, ({ one }) => ({
+export const actionsRelations = relations(actions, ({ one, many }) => ({
   milestone: one(milestones, {
     fields: [actions.milestoneId],
     references: [milestones.id],
+  }),
+  dailyCheckIns: many(dailyCheckIns),
+}));
+
+export const dailyCheckInsRelations = relations(dailyCheckIns, ({ one }) => ({
+  user: one(users, {
+    fields: [dailyCheckIns.userId],
+    references: [users.id],
+  }),
+  selectedAction: one(actions, {
+    fields: [dailyCheckIns.selectedActionId],
+    references: [actions.id],
+  }),
+}));
+
+export const userPreferencesRelations = relations(userPreferences, ({ one }) => ({
+  user: one(users, {
+    fields: [userPreferences.userId],
+    references: [users.id],
   }),
 }));
 
@@ -133,6 +179,18 @@ export const insertActionSchema = createInsertSchema(actions).omit({
   updatedAt: true,
 });
 
+export const insertDailyCheckInSchema = createInsertSchema(dailyCheckIns).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -142,6 +200,10 @@ export type InsertMilestone = z.infer<typeof insertMilestoneSchema>;
 export type Milestone = typeof milestones.$inferSelect;
 export type InsertAction = z.infer<typeof insertActionSchema>;
 export type Action = typeof actions.$inferSelect;
+export type InsertDailyCheckIn = z.infer<typeof insertDailyCheckInSchema>;
+export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
+export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type UserPreferences = typeof userPreferences.$inferSelect;
 
 // Extended types for frontend
 export type GoalWithMilestones = Goal & {

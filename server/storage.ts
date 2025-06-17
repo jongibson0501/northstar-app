@@ -3,6 +3,8 @@ import {
   goals,
   milestones,
   actions,
+  dailyCheckIns,
+  userPreferences,
   type User,
   type UpsertUser,
   type Goal,
@@ -11,6 +13,10 @@ import {
   type InsertMilestone,
   type Action,
   type InsertAction,
+  type DailyCheckIn,
+  type InsertDailyCheckIn,
+  type UserPreferences,
+  type InsertUserPreferences,
   type GoalWithMilestones,
 } from "@shared/schema";
 import { db } from "./db";
