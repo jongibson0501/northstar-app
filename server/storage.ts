@@ -318,12 +318,12 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(dailyCheckIns)
       .where(and(
-        eq(dailyCheckIns.userId, userId),
-        gte(dailyCheckIns.date, startDateStr)
+        eq(dailyCheckIns.userId, userId)
       ))
-      .orderBy(desc(dailyCheckIns.date));
+      .orderBy(desc(dailyCheckIns.date))
+      .limit(days);
 
-    return checkIns;
+    return checkIns.filter(checkIn => checkIn.date >= startDateStr);
   }
 }
 

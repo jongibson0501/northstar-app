@@ -7,8 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Sun, Moon, Target, CheckCircle } from "lucide-react";
+import { Sun, Moon, Target, CheckCircle, Flame } from "lucide-react";
 import type { DailyCheckIn, Action } from "@shared/schema";
+import { Celebration, MiniCelebration } from "@/components/celebration";
 
 export default function DailyCheckIn() {
   const { toast } = useToast();
@@ -16,6 +17,8 @@ export default function DailyCheckIn() {
   const [selectedActionId, setSelectedActionId] = useState<number | null>(null);
   const [eveningAccomplished, setEveningAccomplished] = useState<boolean | null>(null);
   const [eveningReflection, setEveningReflection] = useState("");
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationStreak, setCelebrationStreak] = useState(0);
 
   const today = new Date().toISOString().split('T')[0];
   const currentHour = new Date().getHours();
@@ -76,12 +79,19 @@ export default function DailyCheckIn() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/daily-checkin/today'] });
-      toast({
-        title: "Evening reflection saved!",
-        description: "Great job reflecting on your day.",
-      });
+      
+      // Show celebration if user accomplished their intention
+      if (data.celebrationData?.showCelebration) {
+        setCelebrationStreak(data.celebrationData.streak);
+        setShowCelebration(true);
+      } else {
+        toast({
+          title: "Evening reflection saved!",
+          description: "Thanks for reflecting on your progress.",
+        });
+      }
     },
     onError: () => {
       toast({

@@ -895,16 +895,47 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
     try {
       const { id } = req.params;
       const { eveningAccomplished, eveningReflection } = req.body;
+      const userId = req.user.claims.sub;
       
-      const checkIn = await storage.updateCheckIn(Number(id), {
+      const updates: any = {
         eveningAccomplished,
         eveningReflection,
-      });
+      };
       
-      res.json(checkIn);
+      // If user accomplished their intention, mark as completed and calculate streak
+      if (eveningAccomplished === true) {
+        updates.isCompleted = true;
+        const currentStreak = await storage.calculateStreak(userId);
+        updates.currentStreak = currentStreak + 1; // Add 1 for today's completion
+      }
+      
+      const checkIn = await storage.updateCheckIn(Number(id), updates);
+      
+      // Return with celebration data if completed
+      const response: any = checkIn;
+      if (eveningAccomplished === true) {
+        response.celebrationData = {
+          streak: updates.currentStreak,
+          showCelebration: true
+        };
+      }
+      
+      res.json(response);
     } catch (error) {
       console.error("Error updating check-in:", error);
       res.status(500).json({ message: "Failed to update check-in" });
+    }
+  });
+
+  // Get user's current streak
+  app.get('/api/user/streak', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const streak = await storage.calculateStreak(userId);
+      res.json({ streak });
+    } catch (error) {
+      console.error("Error calculating streak:", error);
+      res.status(500).json({ message: "Failed to calculate streak" });
     }
   });
 
