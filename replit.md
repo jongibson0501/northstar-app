@@ -49,10 +49,12 @@ Northstar is a goal management and achievement tracking application designed to 
 - Custom prompting for different goal types
 
 ### Daily Check-in System
-- Morning intention setting
+- Morning intention setting with timezone-aware 10am reminders
 - Action selection for daily focus
-- Evening reflection and accomplishment tracking
+- Evening reflection and accomplishment tracking with 8pm reminders
 - Progress visualization and habit building
+- Celebration animations with streak tracking
+- Enhanced daily journal for goal review
 
 ### Payment Integration
 - Stripe integration for subscription management
@@ -129,6 +131,8 @@ Northstar is a goal management and achievement tracking application designed to 
 Changelog:
 - June 17, 2025. Initial setup
 - June 17, 2025. Added celebration animation system with streak tracking for daily check-ins
+- June 17, 2025. Implemented timezone-aware notification system for 10am and 8pm reminders
+- June 17, 2025. Added daily journal tracking with goal review capabilities and progress metrics
 ```
 
 ## User Preferences
