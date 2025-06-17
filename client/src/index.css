@@ -79,31 +79,55 @@
   animation: star-glow 4s ease-in-out infinite;
 }
 
-/* Enhanced contrast for better visual definition */
+/* Enhanced contrast with shadows for better visual definition */
 @layer components {
-  /* Stronger borders for cards and white elements */
+  /* Stronger borders for cards and white elements with soft shadows */
   .card {
     @apply border-2 border-slate-300 dark:border-slate-600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.12);
   }
   
-  /* Enhanced button contrast */
+  .dark .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.35);
+  }
+  
+  /* Enhanced button contrast with text shadows */
   .bg-primary {
     @apply border-2 border-slate-400 dark:border-slate-500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.15);
   }
   
-  /* Stronger input field borders */
+  /* Stronger input field borders with subtle shadows */
   input, textarea, select {
     @apply border-2 border-slate-300 dark:border-slate-600;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.08);
   }
   
-  /* White background elements get stronger borders */
+  /* White background elements get stronger borders and shadows */
   .bg-white, .bg-card {
     @apply border-2 border-slate-300 dark:border-slate-600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   }
   
   /* Progress indicators and status elements */
   .bg-accent {
     @apply border border-slate-400 dark:border-slate-500;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Text shadows for better readability */
+  h1, h2, h3, h4, h5, h6 {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+  
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Button text shadows */
+  button {
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
   }
 }
 
