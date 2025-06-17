@@ -34,6 +34,11 @@ export default function DailyCheckIn() {
     queryKey: ['/api/user/incomplete-actions'],
   });
 
+  // Fetch user's current streak
+  const { data: streakData } = useQuery<{ streak: number }>({
+    queryKey: ['/api/user/streak'],
+  });
+
   // Load existing data when check-in is fetched
   useEffect(() => {
     if (todayCheckIn) {
@@ -284,9 +289,14 @@ export default function DailyCheckIn() {
                 </>
               ) : (
                 <div className="space-y-3">
-                  <div className="flex items-center text-green-600">
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    <span className="font-medium">Day complete!</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-green-600">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      <span className="font-medium">Day complete!</span>
+                    </div>
+                    {todayCheckIn.eveningAccomplished && todayCheckIn.currentStreak && todayCheckIn.currentStreak > 0 && (
+                      <MiniCelebration streak={todayCheckIn.currentStreak} />
+                    )}
                   </div>
                   <div className="bg-white p-3 rounded-lg border space-y-2">
                     <p className="text-sm text-gray-600">
@@ -294,6 +304,12 @@ export default function DailyCheckIn() {
                         {todayCheckIn.eveningAccomplished ? "Yes" : "Made progress"}
                       </span>
                     </p>
+                    {streakData && streakData.streak > 0 && !todayCheckIn.currentStreak && (
+                      <div className="flex items-center gap-2 text-sm text-orange-600">
+                        <Flame className="w-4 h-4" />
+                        <span>Current streak: {streakData.streak} days</span>
+                      </div>
+                    )}
                     {todayCheckIn.eveningReflection && (
                       <p className="text-gray-800">{todayCheckIn.eveningReflection}</p>
                     )}
@@ -316,6 +332,14 @@ export default function DailyCheckIn() {
           </Card>
         )}
       </div>
+
+      {/* Celebration Animation */}
+      <Celebration
+        isVisible={showCelebration}
+        onComplete={() => setShowCelebration(false)}
+        streak={celebrationStreak}
+        accomplishmentText={morningIntention}
+      />
     </div>
   );
 }
