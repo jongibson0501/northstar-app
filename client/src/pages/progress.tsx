@@ -336,28 +336,28 @@ export default function ProgressPage() {
 
             {/* Activities Tab */}
             <TabsContent value="activities" className="space-y-4 mt-4">
-              {currentMilestoneData ? (
+              {goals && goals.length > 0 ? (
                 <>
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-lg">
                         <Activity className="w-5 h-5 text-blue-500" />
-                        Current Milestone Activities
+                        All Activities
                       </CardTitle>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {currentMilestoneData.goalTitle} - {currentMilestoneData.milestone.title}
-                      </p>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div className="text-center">
                           <div className="text-4xl font-bold text-gray-800 mb-2">
-                            {currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length} / {currentMilestoneData.milestone.actions.length}
+                            {goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => a.isCompleted).length, 0), 0)} / {goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.length, 0), 0)}
                           </div>
                           <p className="text-sm text-gray-600 mb-4">Activities Completed</p>
                           <Progress 
-                            value={currentMilestoneData.milestone.actions.length > 0 ? 
-                              (currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length / currentMilestoneData.milestone.actions.length) * 100 : 0} 
+                            value={(() => {
+                              const totalActions = goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.length, 0), 0);
+                              const completedActions = goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => a.isCompleted).length, 0), 0);
+                              return totalActions > 0 ? (completedActions / totalActions) * 100 : 0;
+                            })()} 
                             className="h-3" 
                           />
                         </div>
@@ -366,7 +366,7 @@ export default function ProgressPage() {
                           <div className="space-y-1">
                             <div className="flex items-center justify-center">
                               <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                              <span className="text-lg font-semibold">{currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length}</span>
+                              <span className="text-lg font-semibold">{goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => a.isCompleted).length, 0), 0)}</span>
                             </div>
                             <p className="text-xs text-gray-600">Completed</p>
                           </div>
@@ -374,7 +374,7 @@ export default function ProgressPage() {
                           <div className="space-y-1">
                             <div className="flex items-center justify-center">
                               <Clock className="w-4 h-4 text-orange-500 mr-1" />
-                              <span className="text-lg font-semibold">{currentMilestoneData.milestone.actions.length - currentMilestoneData.milestone.actions.filter(a => a.isCompleted).length}</span>
+                              <span className="text-lg font-semibold">{goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => !a.isCompleted).length, 0), 0)}</span>
                             </div>
                             <p className="text-xs text-gray-600">Remaining</p>
                           </div>
@@ -383,33 +383,54 @@ export default function ProgressPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Individual Activities List */}
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-medium text-gray-800">Activities</h3>
-                    {currentMilestoneData.milestone.actions.map((action, index) => (
-                      <Card key={action.id}>
-                        <CardContent className="p-3">
-                          <div className="flex items-start gap-3">
-                            <Checkbox
-                              checked={action.isCompleted || false}
-                              onCheckedChange={(checked) => {
-                                updateActionMutation.mutate({
-                                  actionId: action.id,
-                                  isCompleted: checked === true,
-                                  milestoneId: currentMilestoneData.milestone.id,
-                                });
-                              }}
-                              disabled={updateActionMutation.isPending}
-                            />
-                            <div className="flex-1">
-                              <p className={`text-sm ${action.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
-                                {action.title}
-                              </p>
+                  {/* All Activities List by Goal and Milestone */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-800">All Activities</h3>
+                    {goals.map((goal) => (
+                      <div key={goal.id} className="space-y-3">
+                        <h4 className="text-md font-medium text-gray-700">{goal.title}</h4>
+                        {goal.milestones.map((milestone) => (
+                          <div key={milestone.id} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">
+                                {milestone.targetMonth}
+                              </div>
+                              <h5 className="text-sm font-medium text-gray-600">{milestone.title}</h5>
+                              <span className="text-xs text-gray-500">
+                                ({milestone.actions.filter(a => a.isCompleted).length}/{milestone.actions.length} completed)
+                              </span>
                             </div>
-                            <span className="text-xs text-gray-500">{index + 1}</span>
+                            {milestone.actions.map((action, actionIndex) => (
+                              <Card key={action.id} className="ml-4">
+                                <CardContent className="p-3">
+                                  <div className="flex items-start gap-3">
+                                    <Checkbox
+                                      checked={action.isCompleted || false}
+                                      onCheckedChange={(checked) => {
+                                        updateActionMutation.mutate({
+                                          actionId: action.id,
+                                          isCompleted: checked === true,
+                                          milestoneId: milestone.id,
+                                        });
+                                      }}
+                                      disabled={updateActionMutation.isPending}
+                                    />
+                                    <div className="flex-1">
+                                      <p className={`text-sm ${action.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                        {action.title}
+                                      </p>
+                                      {action.description && (
+                                        <p className="text-xs text-gray-500 mt-1">{action.description}</p>
+                                      )}
+                                    </div>
+                                    <span className="text-xs text-gray-500">{actionIndex + 1}</span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
                           </div>
-                        </CardContent>
-                      </Card>
+                        ))}
+                      </div>
                     ))}
                   </div>
                 </>
@@ -417,7 +438,7 @@ export default function ProgressPage() {
                 <Card>
                   <CardContent className="p-8 text-center">
                     <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">No Current Milestone</h3>
+                    <h3 className="text-lg font-medium text-gray-800 mb-2">No Activities Yet</h3>
                     <p className="text-gray-600">Create a goal and start planning to see activities here!</p>
                   </CardContent>
                 </Card>
