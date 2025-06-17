@@ -939,6 +939,53 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
     }
   });
 
+  // Journal entry routes
+  app.get('/api/journal/entries', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const days = parseInt(req.query.days as string) || 30;
+      const goalId = req.query.goalId ? parseInt(req.query.goalId as string) : null;
+      
+      let entries;
+      if (goalId) {
+        entries = await storage.getJournalEntriesForGoal(userId, goalId);
+      } else {
+        entries = await storage.getUserJournalEntries(userId, days);
+      }
+      
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching journal entries:", error);
+      res.status(500).json({ message: "Failed to fetch journal entries" });
+    }
+  });
+
+  app.post('/api/journal/entries', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const entryData = { ...req.body, userId };
+      
+      const entry = await storage.createJournalEntry(entryData);
+      res.json(entry);
+    } catch (error) {
+      console.error("Error creating journal entry:", error);
+      res.status(500).json({ message: "Failed to create journal entry" });
+    }
+  });
+
+  app.put('/api/journal/entries/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      const entry = await storage.updateJournalEntry(id, updates);
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating journal entry:", error);
+      res.status(500).json({ message: "Failed to update journal entry" });
+    }
+  });
+
   app.get('/api/user/incomplete-actions', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

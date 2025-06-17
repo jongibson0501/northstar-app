@@ -59,6 +59,12 @@ export interface IStorage {
   // User preferences operations
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
   upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
+
+  // Journal entry operations
+  createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry>;
+  updateJournalEntry(id: number, updates: Partial<InsertJournalEntry>): Promise<JournalEntry>;
+  getUserJournalEntries(userId: string, days?: number): Promise<JournalEntry[]>;
+  getJournalEntriesForGoal(userId: string, goalId: number): Promise<JournalEntry[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -327,6 +333,52 @@ export class DatabaseStorage implements IStorage {
       .limit(days);
 
     return checkIns.filter(checkIn => checkIn.date >= startDateStr);
+  }
+
+  // Journal entry operations
+  async createJournalEntry(entry: InsertJournalEntry): Promise<JournalEntry> {
+    const [journalEntry] = await db
+      .insert(journalEntries)
+      .values(entry)
+      .returning();
+    return journalEntry;
+  }
+
+  async updateJournalEntry(id: number, updates: Partial<InsertJournalEntry>): Promise<JournalEntry> {
+    const [journalEntry] = await db
+      .update(journalEntries)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(journalEntries.id, id))
+      .returning();
+    return journalEntry;
+  }
+
+  async getUserJournalEntries(userId: string, days: number = 30): Promise<JournalEntry[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const startDateStr = startDate.toISOString().split('T')[0];
+
+    const entries = await db
+      .select()
+      .from(journalEntries)
+      .where(eq(journalEntries.userId, userId))
+      .orderBy(desc(journalEntries.date))
+      .limit(days);
+
+    return entries.filter(entry => entry.date >= startDateStr);
+  }
+
+  async getJournalEntriesForGoal(userId: string, goalId: number): Promise<JournalEntry[]> {
+    const entries = await db
+      .select()
+      .from(journalEntries)
+      .where(and(
+        eq(journalEntries.userId, userId),
+        eq(journalEntries.selectedGoalId, goalId)
+      ))
+      .orderBy(desc(journalEntries.date));
+
+    return entries;
   }
 }
 

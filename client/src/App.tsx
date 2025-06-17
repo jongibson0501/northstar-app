@@ -13,6 +13,7 @@ import Roadmap from "@/pages/roadmap";
 import ProgressPage from "@/pages/progress";
 import Subscription from "@/pages/subscription";
 import DailyCheckIn from "@/pages/daily-checkin";
+import JournalReview from "@/pages/journal-review";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 
