@@ -44,6 +44,16 @@ export interface IStorage {
   createAction(action: InsertAction): Promise<Action>;
   updateAction(id: number, updates: Partial<InsertAction>): Promise<Action>;
   deleteAction(id: number): Promise<void>;
+
+  // Daily check-in operations
+  getTodayCheckIn(userId: string, date: string): Promise<DailyCheckIn | undefined>;
+  createCheckIn(checkIn: InsertDailyCheckIn): Promise<DailyCheckIn>;
+  updateCheckIn(id: number, updates: Partial<InsertDailyCheckIn>): Promise<DailyCheckIn>;
+  getUserIncompleteActions(userId: string): Promise<Action[]>;
+
+  // User preferences operations
+  getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
+  upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -184,6 +194,75 @@ export class DatabaseStorage implements IStorage {
 
   async deleteAction(id: number): Promise<void> {
     await db.delete(actions).where(eq(actions.id, id));
+  }
+
+  // Daily check-in operations
+  async getTodayCheckIn(userId: string, date: string): Promise<DailyCheckIn | undefined> {
+    const [checkIn] = await db
+      .select()
+      .from(dailyCheckIns)
+      .where(and(eq(dailyCheckIns.userId, userId), eq(dailyCheckIns.date, date)));
+    return checkIn;
+  }
+
+  async createCheckIn(checkIn: InsertDailyCheckIn): Promise<DailyCheckIn> {
+    const [newCheckIn] = await db.insert(dailyCheckIns).values(checkIn).returning();
+    return newCheckIn;
+  }
+
+  async updateCheckIn(id: number, updates: Partial<InsertDailyCheckIn>): Promise<DailyCheckIn> {
+    const [checkIn] = await db
+      .update(dailyCheckIns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(dailyCheckIns.id, id))
+      .returning();
+    return checkIn;
+  }
+
+  async getUserIncompleteActions(userId: string): Promise<Action[]> {
+    const incompleteActions = await db
+      .select({
+        id: actions.id,
+        milestoneId: actions.milestoneId,
+        title: actions.title,
+        description: actions.description,
+        resources: actions.resources,
+        orderIndex: actions.orderIndex,
+        isCompleted: actions.isCompleted,
+        completedAt: actions.completedAt,
+        createdAt: actions.createdAt,
+        updatedAt: actions.updatedAt,
+      })
+      .from(actions)
+      .innerJoin(milestones, eq(actions.milestoneId, milestones.id))
+      .innerJoin(goals, eq(milestones.goalId, goals.id))
+      .where(and(eq(goals.userId, userId), eq(actions.isCompleted, false)))
+      .orderBy(actions.orderIndex);
+    return incompleteActions;
+  }
+
+  // User preferences operations
+  async getUserPreferences(userId: string): Promise<UserPreferences | undefined> {
+    const [preferences] = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId));
+    return preferences;
+  }
+
+  async upsertUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const [userPref] = await db
+      .insert(userPreferences)
+      .values(preferences)
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: {
+          ...preferences,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return userPref;
   }
 }
 

@@ -857,6 +857,93 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
     }
   });
 
+  // Daily check-in routes
+  app.get('/api/daily-checkin/today', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      const checkIn = await storage.getTodayCheckIn(userId, today);
+      res.json(checkIn || null);
+    } catch (error) {
+      console.error("Error fetching today's check-in:", error);
+      res.status(500).json({ message: "Failed to fetch today's check-in" });
+    }
+  });
+
+  app.post('/api/daily-checkin', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { morningIntention, selectedActionId } = req.body;
+      const today = new Date().toISOString().split('T')[0];
+      
+      const checkIn = await storage.createCheckIn({
+        userId,
+        date: today,
+        morningIntention,
+        selectedActionId: selectedActionId || null,
+      });
+      
+      res.json(checkIn);
+    } catch (error) {
+      console.error("Error creating check-in:", error);
+      res.status(500).json({ message: "Failed to create check-in" });
+    }
+  });
+
+  app.put('/api/daily-checkin/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { eveningAccomplished, eveningReflection } = req.body;
+      
+      const checkIn = await storage.updateCheckIn(Number(id), {
+        eveningAccomplished,
+        eveningReflection,
+      });
+      
+      res.json(checkIn);
+    } catch (error) {
+      console.error("Error updating check-in:", error);
+      res.status(500).json({ message: "Failed to update check-in" });
+    }
+  });
+
+  app.get('/api/user/incomplete-actions', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const actions = await storage.getUserIncompleteActions(userId);
+      res.json(actions);
+    } catch (error) {
+      console.error("Error fetching incomplete actions:", error);
+      res.status(500).json({ message: "Failed to fetch incomplete actions" });
+    }
+  });
+
+  app.get('/api/user/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferences = await storage.getUserPreferences(userId);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error fetching user preferences:", error);
+      res.status(500).json({ message: "Failed to fetch user preferences" });
+    }
+  });
+
+  app.put('/api/user/preferences', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const preferences = await storage.upsertUserPreferences({
+        userId,
+        ...req.body,
+      });
+      res.json(preferences);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ message: "Failed to update user preferences" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

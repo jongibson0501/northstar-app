@@ -12,6 +12,7 @@ import PromptFlow from "@/pages/prompt-flow";
 import Roadmap from "@/pages/roadmap";
 import ProgressPage from "@/pages/progress";
 import Subscription from "@/pages/subscription";
+import DailyCheckIn from "@/pages/daily-checkin";
 import Header from "@/components/header";
 import Navigation from "@/components/navigation";
 
@@ -40,6 +41,7 @@ function Router() {
               <Route path="/goals/:id/plan" component={PromptFlow} />
               <Route path="/goals/:id" component={Roadmap} />
               <Route path="/progress" component={ProgressPage} />
+              <Route path="/daily-checkin" component={DailyCheckIn} />
               <Route path="/subscription" component={Subscription} />
               <Route component={NotFound} />
             </Switch>
