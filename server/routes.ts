@@ -911,6 +911,39 @@ Make every action specific to ${goalTitle} with clear, achievable steps.`;
       
       const checkIn = await storage.updateCheckIn(Number(id), updates);
       
+      // Create or update journal entry when check-in is completed
+      if (eveningAccomplished !== null) {
+        const today = new Date().toISOString().split('T')[0];
+        
+        try {
+          // Check if journal entry already exists for today
+          const existingEntries = await storage.getUserJournalEntries(userId, 1);
+          const todayEntry = existingEntries.find(entry => entry.date === today);
+          
+          const journalData = {
+            userId,
+            date: today,
+            morningIntention: checkIn.morningIntention,
+            selectedActionId: checkIn.selectedActionId,
+            eveningReflection: checkIn.eveningReflection,
+            accomplishmentLevel: eveningAccomplished === true ? 5 : 3, // 5 for accomplished, 3 for progress
+            isCompleted: checkIn.isCompleted || false,
+            streakCount: checkIn.currentStreak || 0,
+          };
+          
+          if (todayEntry) {
+            // Update existing journal entry
+            await storage.updateJournalEntry(todayEntry.id, journalData);
+          } else {
+            // Create new journal entry
+            await storage.createJournalEntry(journalData);
+          }
+        } catch (journalError) {
+          console.error("Error creating/updating journal entry:", journalError);
+          // Don't fail the check-in if journal creation fails
+        }
+      }
+      
       // Return with celebration data if completed
       const response: any = checkIn;
       if (eveningAccomplished === true) {
