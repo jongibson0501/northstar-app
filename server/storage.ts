@@ -49,7 +49,7 @@ export interface IStorage {
   getTodayCheckIn(userId: string, date: string): Promise<DailyCheckIn | undefined>;
   createCheckIn(checkIn: InsertDailyCheckIn): Promise<DailyCheckIn>;
   updateCheckIn(id: number, updates: Partial<InsertDailyCheckIn>): Promise<DailyCheckIn>;
-  getUserIncompleteActions(userId: string): Promise<Action[]>;
+  getUserIncompleteActions(userId: string): Promise<(Action & { milestone: { title: string; targetMonth: number; goalTitle: string } })[]>;
 
   // User preferences operations
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
@@ -219,7 +219,7 @@ export class DatabaseStorage implements IStorage {
     return checkIn;
   }
 
-  async getUserIncompleteActions(userId: string): Promise<Action[]> {
+  async getUserIncompleteActions(userId: string): Promise<(Action & { milestone: { title: string; targetMonth: number; goalTitle: string } })[]> {
     const incompleteActions = await db
       .select({
         id: actions.id,
@@ -232,12 +232,17 @@ export class DatabaseStorage implements IStorage {
         completedAt: actions.completedAt,
         createdAt: actions.createdAt,
         updatedAt: actions.updatedAt,
+        milestone: {
+          title: milestones.title,
+          targetMonth: milestones.targetMonth,
+          goalTitle: goals.title,
+        }
       })
       .from(actions)
       .innerJoin(milestones, eq(actions.milestoneId, milestones.id))
       .innerJoin(goals, eq(milestones.goalId, goals.id))
       .where(and(eq(goals.userId, userId), eq(actions.isCompleted, false)))
-      .orderBy(actions.orderIndex);
+      .orderBy(milestones.targetMonth, actions.orderIndex);
     return incompleteActions;
   }
 

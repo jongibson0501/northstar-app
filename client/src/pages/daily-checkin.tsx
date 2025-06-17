@@ -26,8 +26,8 @@ export default function DailyCheckIn() {
     queryKey: ['/api/daily-checkin/today'],
   });
 
-  // Fetch incomplete actions for selection
-  const { data: incompleteActions = [] } = useQuery<Action[]>({
+  // Fetch incomplete actions for selection with milestone context
+  const { data: incompleteActions = [] } = useQuery<(Action & { milestone: { title: string; targetMonth: number; goalTitle: string } })[]>({
     queryKey: ['/api/user/incomplete-actions'],
   });
 
@@ -168,11 +168,29 @@ export default function DailyCheckIn() {
                         <SelectValue placeholder="Select an action from your goals..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {incompleteActions.map((action) => (
-                          <SelectItem key={action.id} value={action.id.toString()}>
-                            {action.title}
-                          </SelectItem>
-                        ))}
+                        {incompleteActions.map((action) => {
+                          const currentMonth = new Date().getMonth() + 1;
+                          const milestone = action.milestone;
+                          const isCurrentMonth = milestone?.targetMonth === currentMonth;
+                          
+                          return (
+                            <SelectItem key={action.id} value={action.id.toString()}>
+                              <div className="flex flex-col w-full">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">{action.title}</span>
+                                  {isCurrentMonth && (
+                                    <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Current</span>
+                                  )}
+                                </div>
+                                {milestone && (
+                                  <span className="text-xs text-gray-500">
+                                    {milestone.goalTitle} → Month {milestone.targetMonth}: {milestone.title}
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
