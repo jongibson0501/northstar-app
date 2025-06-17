@@ -1,13 +1,30 @@
-import { Home, TrendingUp } from "lucide-react";
+import { Home, TrendingUp, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import type { DailyCheckIn } from "@shared/schema";
 
 export default function Navigation() {
   const [location, setLocation] = useLocation();
 
+  // Check if user has completed today's check-in
+  const { data: todayCheckIn } = useQuery<DailyCheckIn | null>({
+    queryKey: ['/api/daily-checkin/today'],
+  });
+
+  const hasCompletedMorning = todayCheckIn && todayCheckIn.morningIntention;
+  const hasCompletedEvening = todayCheckIn && todayCheckIn.eveningAccomplished !== null;
+  const needsAttention = !hasCompletedMorning || (hasCompletedMorning && !hasCompletedEvening);
+
   const navItems = [
     { icon: Home, label: "Goals", path: "/" },
     { icon: TrendingUp, label: "Progress", path: "/progress" },
+    { 
+      icon: Sun, 
+      label: "Daily", 
+      path: "/daily-checkin",
+      needsAttention 
+    },
   ];
 
   return (
@@ -16,6 +33,7 @@ export default function Navigation() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.path;
+          const showDot = item.needsAttention && !isActive;
           
           return (
             <Button
@@ -23,11 +41,16 @@ export default function Navigation() {
               variant="ghost"
               size="sm"
               onClick={() => setLocation(item.path)}
-              className={`flex flex-col items-center space-y-1 py-2 px-3 ${
+              className={`relative flex flex-col items-center space-y-1 py-2 px-3 ${
                 isActive ? 'text-primary' : 'text-gray-400'
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <div className="relative">
+                <Icon className="w-5 h-5" />
+                {showDot && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></div>
+                )}
+              </div>
               <span className="text-xs font-medium">{item.label}</span>
             </Button>
           );
