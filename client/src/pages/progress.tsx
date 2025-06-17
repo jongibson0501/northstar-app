@@ -1,18 +1,37 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Target, CheckCircle, Clock, Activity } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Target, CheckCircle, Clock, Activity, ArrowLeft, ChevronRight } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { GoalWithMilestones } from "@shared/schema";
 
 export default function ProgressPage() {
   const { toast } = useToast();
+  const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState("goals");
+  
   const { data: goals, isLoading } = useQuery<GoalWithMilestones[]>({
     queryKey: ["/api/goals"],
   });
+
+  const selectedGoal = selectedGoalId ? goals?.find(g => g.id === selectedGoalId) : null;
+  const completedGoals = goals?.filter(g => g.status === "completed") || [];
+  const activeGoals = goals?.filter(g => g.status !== "completed") || [];
+
+  const handleGoalSelect = (goalId: number) => {
+    setSelectedGoalId(goalId);
+    setActiveTab("milestones");
+  };
+
+  const handleBackToOverview = () => {
+    setSelectedGoalId(null);
+    setActiveTab("goals");
+  };
 
   const updateMilestoneMutation = useMutation({
     mutationFn: async ({ milestoneId, isCompleted }: { milestoneId: number; isCompleted: boolean }) => {
@@ -47,24 +66,19 @@ export default function ProgressPage() {
       return { action: response.json(), milestoneId, actionId, isCompleted };
     },
     onSuccess: async (result, variables) => {
-      // Refresh the goals data and wait for it to complete
       await queryClient.invalidateQueries({ queryKey: ["/api/goals"] });
       
-      // If we just completed an action, check milestone completion after a brief delay
       if (variables.isCompleted && variables.milestoneId) {
         setTimeout(async () => {
-          // Get fresh data to check milestone completion
           const freshGoals = queryClient.getQueryData<GoalWithMilestones[]>(["/api/goals"]);
           if (freshGoals) {
             const goal = freshGoals.find(g => g.milestones.some(m => m.id === variables.milestoneId));
             if (goal) {
               const milestone = goal.milestones.find(m => m.id === variables.milestoneId);
               if (milestone && !milestone.isCompleted) {
-                // Check if all actions in this milestone are now completed
                 const allActionsCompleted = milestone.actions.every(action => action.isCompleted);
                 
                 if (allActionsCompleted) {
-                  // Auto-complete the milestone
                   updateMilestoneMutation.mutate({
                     milestoneId: milestone.id,
                     isCompleted: true,
@@ -78,7 +92,7 @@ export default function ProgressPage() {
               }
             }
           }
-        }, 500); // Small delay to ensure data is refreshed
+        }, 500);
       }
       
       toast({
@@ -102,49 +116,6 @@ export default function ProgressPage() {
     return Math.round((completedMilestones / totalMilestones) * 100);
   };
 
-  const getCompletedGoalsCount = () => {
-    if (!goals) return 0;
-    return goals.filter(goal => getGoalProgress(goal) === 100).length;
-  };
-
-  const getTotalMilestonesCount = () => {
-    if (!goals) return 0;
-    return goals.reduce((total, goal) => total + goal.milestones.length, 0);
-  };
-
-  const getCompletedMilestonesCount = () => {
-    if (!goals) return 0;
-    return goals.reduce((total, goal) => 
-      total + goal.milestones.filter(m => m.isCompleted).length, 0
-    );
-  };
-
-  const getCurrentMilestone = () => {
-    if (!goals || goals.length === 0) return null;
-    
-    // Find the first incomplete milestone from the most recently updated goal
-    const sortedGoals = [...goals].sort((a, b) => {
-      const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-      const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-      return dateB - dateA;
-    });
-    
-    for (const goal of sortedGoals) {
-      const incompleteMilestone = goal.milestones.find(m => !m.isCompleted);
-      if (incompleteMilestone) {
-        return { milestone: incompleteMilestone, goalTitle: goal.title };
-      }
-    }
-    
-    // If all milestones are complete, return the last milestone from the most recent goal
-    if (sortedGoals[0]?.milestones.length > 0) {
-      const lastMilestone = sortedGoals[0].milestones[sortedGoals[0].milestones.length - 1];
-      return { milestone: lastMilestone, goalTitle: sortedGoals[0].title };
-    }
-    
-    return null;
-  };
-
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -152,11 +123,6 @@ export default function ProgressPage() {
       </div>
     );
   }
-
-  const completedGoals = getCompletedGoalsCount();
-  const totalMilestones = getTotalMilestonesCount();
-  const completedMilestones = getCompletedMilestonesCount();
-  const currentMilestoneData = getCurrentMilestone();
 
   return (
     <div className="min-h-screen bg-background text-secondary pb-20">
@@ -167,294 +133,266 @@ export default function ProgressPage() {
             <p className="text-gray-600">Track your goal achievements and milestones</p>
           </div>
 
-          <Tabs defaultValue="goals" className="w-full">
+          {selectedGoal ? (
+            <div className="mb-4">
+              <Button 
+                variant="ghost" 
+                onClick={handleBackToOverview}
+                className="mb-2 p-0 h-auto text-blue-600 hover:text-blue-800"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Progress Overview
+              </Button>
+              <h3 className="text-lg font-medium text-gray-800">{selectedGoal.title}</h3>
+            </div>
+          ) : null}
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="goals" className="text-xs">Goals</TabsTrigger>
-              <TabsTrigger value="milestones" className="text-xs">Milestones</TabsTrigger>
-              <TabsTrigger value="activities" className="text-xs">Activities</TabsTrigger>
+              <TabsTrigger 
+                value="milestones" 
+                className="text-xs"
+                disabled={!selectedGoal}
+              >
+                Milestones
+              </TabsTrigger>
+              <TabsTrigger 
+                value="activities" 
+                className="text-xs"
+                disabled={!selectedGoal}
+              >
+                Activities
+              </TabsTrigger>
             </TabsList>
 
-            {/* Goals Tab */}
+            {/* Goals Overview Tab */}
             <TabsContent value="goals" className="space-y-4 mt-4">
+              {/* Completed Goals Section */}
+              {completedGoals.length > 0 && (
+                <Card className="bg-green-50 border-green-200">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-lg text-green-800">
+                      <CheckCircle className="w-5 h-5" />
+                      Completed Goals ({completedGoals.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {completedGoals.map((goal) => (
+                        <div key={goal.id} className="flex items-center justify-between p-3 bg-green-100 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                            <span className="font-medium text-green-800">{goal.title}</span>
+                          </div>
+                          <span className="text-sm text-green-600 font-medium">100%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Active Goals Section */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Target className="w-5 h-5 text-primary" />
-                    Goal Completion
+                    Active Goals ({activeGoals.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-gray-800 mb-2">
-                        {completedGoals} / {goals?.length || 0}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">Goals Completed</p>
-                      <Progress value={goals?.length ? (completedGoals / goals.length) * 100 : 0} className="h-3" />
+                  {activeGoals.length > 0 ? (
+                    <div className="space-y-3">
+                      {activeGoals.map((goal) => {
+                        const progress = getGoalProgress(goal);
+                        const completedCount = goal.milestones.filter(m => m.isCompleted).length;
+                        
+                        return (
+                          <Card 
+                            key={goal.id} 
+                            className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-blue-500"
+                            onClick={() => handleGoalSelect(goal.id)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <h4 className="font-medium text-gray-800 flex-1">{goal.title}</h4>
+                                    <ChevronRight className="w-4 h-4 text-gray-400 ml-2" />
+                                  </div>
+                                  
+                                  <Progress value={progress} className="h-2 mb-2" />
+                                  
+                                  <div className="flex justify-between text-sm text-gray-600">
+                                    <span>{completedCount} of {goal.milestones.length} milestones</span>
+                                    <span className="font-medium text-blue-600">{progress}%</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                          <span className="text-lg font-semibold">{completedGoals}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">Completed</p>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-orange-500 mr-1" />
-                          <span className="text-lg font-semibold">{(goals?.length || 0) - completedGoals}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">In Progress</p>
-                      </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-800 mb-2">No Active Goals</h3>
+                      <p className="text-gray-600">Create your first goal to start tracking progress!</p>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
-
-              {/* Individual Goal Progress */}
-              {goals && goals.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-800">Individual Goals</h3>
-                  {goals.map((goal) => {
-                    const progress = getGoalProgress(goal);
-                    const completedCount = goal.milestones.filter(m => m.isCompleted).length;
-                    
-                    return (
-                      <Card key={goal.id}>
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div className="flex justify-between items-start">
-                              <h4 className="font-medium text-gray-800 flex-1">{goal.title}</h4>
-                              <span className="text-sm font-medium text-gray-600">{progress}%</span>
-                            </div>
-                            
-                            <Progress value={progress} className="h-2" />
-                            
-                            <div className="flex justify-between text-sm text-gray-600">
-                              <span>{completedCount} of {goal.milestones.length} milestones</span>
-                              <span className={`font-medium ${progress === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                                {progress === 100 ? 'Completed' : 'In Progress'}
-                              </span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
             </TabsContent>
 
-            {/* Milestones Tab */}
+            {/* Selected Goal Milestones Tab */}
             <TabsContent value="milestones" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    Milestone Progress
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold text-gray-800 mb-2">
-                        {completedMilestones} / {totalMilestones}
-                      </div>
-                      <p className="text-sm text-gray-600 mb-4">Milestones Completed</p>
-                      <Progress value={totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0} className="h-3" />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-center">
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                          <span className="text-lg font-semibold">{completedMilestones}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">Completed</p>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-center">
-                          <Clock className="w-4 h-4 text-orange-500 mr-1" />
-                          <span className="text-lg font-semibold">{totalMilestones - completedMilestones}</span>
-                        </div>
-                        <p className="text-xs text-gray-600">Remaining</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* All Milestones List */}
-              {goals && goals.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-800">All Milestones</h3>
-                  {goals.map((goal) => (
-                    <div key={goal.id} className="space-y-3">
-                      <h4 className="text-md font-medium text-gray-700">{goal.title}</h4>
-                      {goal.milestones.map((milestone) => (
-                        <Card key={milestone.id}>
-                          <CardContent className="p-3">
-                            <div className="flex items-start gap-3">
-                              <Checkbox
-                                checked={milestone.isCompleted || false}
-                                onCheckedChange={(checked) => {
-                                  updateMilestoneMutation.mutate({
-                                    milestoneId: milestone.id,
-                                    isCompleted: checked === true,
-                                  });
-                                }}
-                                disabled={updateMilestoneMutation.isPending}
-                              />
-                              <div className="flex-1">
-                                <p className={`text-sm font-medium ${milestone.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
-                                  {milestone.title}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {milestone.actions.filter(a => a.isCompleted).length} of {milestone.actions.length} activities completed
-                                </p>
-                              </div>
-                              <div className={`px-2 py-1 rounded-full text-xs ${
-                                milestone.isCompleted 
-                                  ? 'bg-green-100 text-green-700' 
-                                  : 'bg-orange-100 text-orange-700'
-                              }`}>
-                                {milestone.isCompleted ? 'Complete' : 'In Progress'}
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Activities Tab */}
-            <TabsContent value="activities" className="space-y-4 mt-4">
-              {goals && goals.length > 0 ? (
+              {selectedGoal && (
                 <>
                   <Card>
                     <CardHeader className="pb-3">
                       <CardTitle className="flex items-center gap-2 text-lg">
-                        <Activity className="w-5 h-5 text-blue-500" />
-                        All Activities
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        Milestones Progress
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div className="text-center">
                           <div className="text-4xl font-bold text-gray-800 mb-2">
-                            {goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => a.isCompleted).length, 0), 0)} / {goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.length, 0), 0)}
+                            {selectedGoal.milestones.filter(m => m.isCompleted).length} / {selectedGoal.milestones.length}
                           </div>
-                          <p className="text-sm text-gray-600 mb-4">Activities Completed</p>
-                          <Progress 
-                            value={(() => {
-                              const totalActions = goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.length, 0), 0);
-                              const completedActions = goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => a.isCompleted).length, 0), 0);
-                              return totalActions > 0 ? (completedActions / totalActions) * 100 : 0;
-                            })()} 
-                            className="h-3" 
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-center">
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-center">
-                              <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
-                              <span className="text-lg font-semibold">{goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => a.isCompleted).length, 0), 0)}</span>
-                            </div>
-                            <p className="text-xs text-gray-600">Completed</p>
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-center">
-                              <Clock className="w-4 h-4 text-orange-500 mr-1" />
-                              <span className="text-lg font-semibold">{goals.reduce((total, goal) => total + goal.milestones.reduce((mTotal, milestone) => mTotal + milestone.actions.filter(a => !a.isCompleted).length, 0), 0)}</span>
-                            </div>
-                            <p className="text-xs text-gray-600">Remaining</p>
-                          </div>
+                          <p className="text-sm text-gray-600 mb-4">Milestones Completed</p>
+                          <Progress value={getGoalProgress(selectedGoal)} className="h-3" />
                         </div>
                       </div>
                     </CardContent>
                   </Card>
 
-                  {/* All Activities List by Goal and Milestone */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium text-gray-800">All Activities</h3>
-                    {goals.map((goal) => (
-                      <div key={goal.id} className="space-y-3">
-                        <h4 className="text-md font-medium text-gray-700">{goal.title}</h4>
-                        {goal.milestones.map((milestone) => (
-                          <div key={milestone.id} className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">
-                                {milestone.targetMonth}
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-medium text-gray-800">Milestones</h3>
+                    {selectedGoal.milestones.map((milestone) => (
+                      <Card key={milestone.id}>
+                        <CardContent className="p-3">
+                          <div className="flex items-start gap-3">
+                            <Checkbox
+                              checked={milestone.isCompleted || false}
+                              onCheckedChange={(checked) => {
+                                updateMilestoneMutation.mutate({
+                                  milestoneId: milestone.id,
+                                  isCompleted: checked === true,
+                                });
+                              }}
+                              disabled={updateMilestoneMutation.isPending}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">
+                                  {milestone.targetMonth}
+                                </div>
+                                <p className={`text-sm font-medium ${milestone.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                  {milestone.title}
+                                </p>
                               </div>
-                              <h5 className="text-sm font-medium text-gray-600">{milestone.title}</h5>
-                              <span className="text-xs text-gray-500">
-                                ({milestone.actions.filter(a => a.isCompleted).length}/{milestone.actions.length} completed)
-                              </span>
+                              <p className="text-xs text-gray-500 mt-1">
+                                {milestone.actions.filter(a => a.isCompleted).length} of {milestone.actions.length} activities completed
+                              </p>
                             </div>
-                            {milestone.actions.map((action, actionIndex) => (
-                              <Card key={action.id} className="ml-4">
-                                <CardContent className="p-3">
-                                  <div className="flex items-start gap-3">
-                                    <Checkbox
-                                      checked={action.isCompleted || false}
-                                      onCheckedChange={(checked) => {
-                                        updateActionMutation.mutate({
-                                          actionId: action.id,
-                                          isCompleted: checked === true,
-                                          milestoneId: milestone.id,
-                                        });
-                                      }}
-                                      disabled={updateActionMutation.isPending}
-                                    />
-                                    <div className="flex-1">
-                                      <p className={`text-sm ${action.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
-                                        {action.title}
-                                      </p>
-                                      {action.description && (
-                                        <p className="text-xs text-gray-500 mt-1">{action.description}</p>
-                                      )}
-                                    </div>
-                                    <span className="text-xs text-gray-500">{actionIndex + 1}</span>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))}
+                            <div className={`px-2 py-1 rounded-full text-xs ${
+                              milestone.isCompleted 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-orange-100 text-orange-700'
+                            }`}>
+                              {milestone.isCompleted ? 'Complete' : 'In Progress'}
+                            </div>
                           </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </>
+              )}
+            </TabsContent>
+
+            {/* Selected Goal Activities Tab */}
+            <TabsContent value="activities" className="space-y-4 mt-4">
+              {selectedGoal && (
+                <>
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center gap-2 text-lg">
+                        <Activity className="w-5 h-5 text-blue-500" />
+                        Activities Progress
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="text-center">
+                          <div className="text-4xl font-bold text-gray-800 mb-2">
+                            {selectedGoal.milestones.reduce((total, milestone) => total + milestone.actions.filter(a => a.isCompleted).length, 0)} / {selectedGoal.milestones.reduce((total, milestone) => total + milestone.actions.length, 0)}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-4">Activities Completed</p>
+                          <Progress 
+                            value={(() => {
+                              const totalActions = selectedGoal.milestones.reduce((total, milestone) => total + milestone.actions.length, 0);
+                              const completedActions = selectedGoal.milestones.reduce((total, milestone) => total + milestone.actions.filter(a => a.isCompleted).length, 0);
+                              return totalActions > 0 ? (completedActions / totalActions) * 100 : 0;
+                            })()} 
+                            className="h-3" 
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium text-gray-800">Activities by Milestone</h3>
+                    {selectedGoal.milestones.map((milestone) => (
+                      <div key={milestone.id} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">
+                            {milestone.targetMonth}
+                          </div>
+                          <h5 className="text-sm font-medium text-gray-600">{milestone.title}</h5>
+                          <span className="text-xs text-gray-500">
+                            ({milestone.actions.filter(a => a.isCompleted).length}/{milestone.actions.length} completed)
+                          </span>
+                        </div>
+                        {milestone.actions.map((action) => (
+                          <Card key={action.id} className="ml-8">
+                            <CardContent className="p-3">
+                              <div className="flex items-start gap-3">
+                                <Checkbox
+                                  checked={action.isCompleted || false}
+                                  onCheckedChange={(checked) => {
+                                    updateActionMutation.mutate({
+                                      actionId: action.id,
+                                      isCompleted: checked === true,
+                                      milestoneId: milestone.id,
+                                    });
+                                  }}
+                                  disabled={updateActionMutation.isPending}
+                                />
+                                <div className="flex-1">
+                                  <p className={`text-sm ${action.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
+                                    {action.title}
+                                  </p>
+                                  {action.description && (
+                                    <p className="text-xs text-gray-500 mt-1">{action.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     ))}
                   </div>
                 </>
-              ) : (
-                <Card>
-                  <CardContent className="p-8 text-center">
-                    <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">No Activities Yet</h3>
-                    <p className="text-gray-600">Create a goal and start planning to see activities here!</p>
-                  </CardContent>
-                </Card>
               )}
             </TabsContent>
           </Tabs>
-
-          {(!goals || goals.length === 0) && (
-            <Card className="mt-6">
-              <CardContent className="p-8 text-center">
-                <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">No Goals Yet</h3>
-                <p className="text-gray-600">Create your first goal to start tracking progress!</p>
-              </CardContent>
-            </Card>
-          )}
         </section>
       </div>
     </div>
