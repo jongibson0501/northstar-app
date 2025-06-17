@@ -128,6 +128,7 @@ Northstar is a goal management and achievement tracking application designed to 
 ```
 Changelog:
 - June 17, 2025. Initial setup
+- June 17, 2025. Added celebration animation system with streak tracking for daily check-ins
 ```
 
 ## User Preferences
