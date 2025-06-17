@@ -90,6 +90,8 @@ export const dailyCheckIns = pgTable("daily_check_ins", {
   selectedActionId: integer("selected_action_id").references(() => actions.id),
   eveningAccomplished: boolean("evening_accomplished"), // Did you accomplish it?
   eveningReflection: text("evening_reflection"), // Optional reflection notes
+  isCompleted: boolean("is_completed").default(false), // Full day completed
+  currentStreak: integer("current_streak").default(0), // Current streak count
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

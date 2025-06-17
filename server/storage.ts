@@ -50,6 +50,8 @@ export interface IStorage {
   createCheckIn(checkIn: InsertDailyCheckIn): Promise<DailyCheckIn>;
   updateCheckIn(id: number, updates: Partial<InsertDailyCheckIn>): Promise<DailyCheckIn>;
   getUserIncompleteActions(userId: string): Promise<(Action & { milestone: { title: string; targetMonth: number; goalTitle: string } })[]>;
+  calculateStreak(userId: string): Promise<number>;
+  getRecentCheckIns(userId: string, days: number): Promise<DailyCheckIn[]>;
 
   // User preferences operations
   getUserPreferences(userId: string): Promise<UserPreferences | undefined>;
@@ -268,6 +270,60 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return userPref;
+  }
+
+  async calculateStreak(userId: string): Promise<number> {
+    const checkIns = await db
+      .select()
+      .from(dailyCheckIns)
+      .where(eq(dailyCheckIns.userId, userId))
+      .orderBy(desc(dailyCheckIns.date))
+      .limit(90); // Check last 90 days for streak
+
+    if (checkIns.length === 0) return 0;
+
+    let streak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    let currentDate = new Date(today);
+
+    // Check if today's check-in is completed
+    const todayCheckIn = checkIns.find(c => c.date === today);
+    if (!todayCheckIn?.isCompleted) {
+      // Check yesterday first if today isn't complete
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    // Count consecutive completed days backwards from today/yesterday
+    for (let i = 0; i < 90; i++) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      const checkIn = checkIns.find(c => c.date === dateStr);
+      
+      if (checkIn?.isCompleted) {
+        streak++;
+        currentDate.setDate(currentDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  }
+
+  async getRecentCheckIns(userId: string, days: number): Promise<DailyCheckIn[]> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const startDateStr = startDate.toISOString().split('T')[0];
+
+    const checkIns = await db
+      .select()
+      .from(dailyCheckIns)
+      .where(and(
+        eq(dailyCheckIns.userId, userId),
+        gte(dailyCheckIns.date, startDateStr)
+      ))
+      .orderBy(desc(dailyCheckIns.date));
+
+    return checkIns;
   }
 }
 
