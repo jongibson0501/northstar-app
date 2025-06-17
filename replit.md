@@ -139,4 +139,5 @@ Changelog:
 
 ```
 Preferred communication style: Simple, everyday language.
+Color scheme: Wellness & Mindfulness theme with soft indigo primary (#5C7AEA), sky blue accent (#A3D5FF), and light background (#F1F5F9) for a soothing, calming interface.
 ```
