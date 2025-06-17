@@ -5,6 +5,7 @@ import {
   actions,
   dailyCheckIns,
   userPreferences,
+  journalEntries,
   type User,
   type UpsertUser,
   type Goal,
@@ -17,6 +18,8 @@ import {
   type InsertDailyCheckIn,
   type UserPreferences,
   type InsertUserPreferences,
+  type JournalEntry,
+  type InsertJournalEntry,
   type GoalWithMilestones,
 } from "@shared/schema";
 import { db } from "./db";

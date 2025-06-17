@@ -100,10 +100,30 @@ export const dailyCheckIns = pgTable("daily_check_ins", {
 export const userPreferences = pgTable("user_preferences", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
-  morningNudgeTime: varchar("morning_nudge_time").default("09:00"), // HH:MM format
-  eveningNudgeTime: varchar("evening_nudge_time").default("20:00"), // HH:MM format
+  morningNudgeTime: varchar("morning_nudge_time").default("10:00"), // 10:00 AM
+  eveningNudgeTime: varchar("evening_nudge_time").default("20:00"), // 8:00 PM  
   timezone: varchar("timezone").default("America/New_York"),
   nudgesEnabled: boolean("nudges_enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Daily journal entries for reviewing goal progress
+export const journalEntries = pgTable("journal_entries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  date: varchar("date").notNull(), // YYYY-MM-DD format
+  morningIntention: text("morning_intention"),
+  selectedGoalId: integer("selected_goal_id").references(() => goals.id),
+  selectedActionId: integer("selected_action_id").references(() => actions.id),
+  eveningReflection: text("evening_reflection"),
+  accomplishmentLevel: integer("accomplishment_level"), // 1-5 scale how well they did
+  mood: varchar("mood"), // daily mood tracking
+  keyLearnings: text("key_learnings"), // what they learned today
+  challengesFaced: text("challenges_faced"), // obstacles encountered
+  tomorrowFocus: text("tomorrow_focus"), // what to focus on tomorrow
+  streakCount: integer("streak_count").default(0),
+  isCompleted: boolean("is_completed").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -112,6 +132,7 @@ export const userPreferences = pgTable("user_preferences", {
 export const usersRelations = relations(users, ({ many, one }) => ({
   goals: many(goals),
   dailyCheckIns: many(dailyCheckIns),
+  journalEntries: many(journalEntries),
   preferences: one(userPreferences),
 }));
 
@@ -157,6 +178,21 @@ export const userPreferencesRelations = relations(userPreferences, ({ one }) => 
   }),
 }));
 
+export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [journalEntries.userId],
+    references: [users.id],
+  }),
+  goal: one(goals, {
+    fields: [journalEntries.selectedGoalId],
+    references: [goals.id],
+  }),
+  action: one(actions, {
+    fields: [journalEntries.selectedActionId],
+    references: [actions.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
@@ -193,6 +229,12 @@ export const insertUserPreferencesSchema = createInsertSchema(userPreferences).o
   updatedAt: true,
 });
 
+export const insertJournalEntrySchema = createInsertSchema(journalEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -206,6 +248,8 @@ export type InsertDailyCheckIn = z.infer<typeof insertDailyCheckInSchema>;
 export type DailyCheckIn = typeof dailyCheckIns.$inferSelect;
 export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;
+export type InsertJournalEntry = z.infer<typeof insertJournalEntrySchema>;
+export type JournalEntry = typeof journalEntries.$inferSelect;
 
 // Extended types for frontend
 export type GoalWithMilestones = Goal & {
