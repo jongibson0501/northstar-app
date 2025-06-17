@@ -3,53 +3,53 @@
 @tailwind utilities;
 
 :root {
-  /* Wellness & Mindfulness Theme */
-  --background: 210 11% 98%; /* #F1F5F9 - Light background */
-  --foreground: 0 0% 18%; /* #2E2E2E - Dark text */
-  --muted: 210 40% 96%; /* Light muted background */
-  --muted-foreground: 215 16% 47%; /* Medium gray text */
+  /* Northstar Brand Colors */
+  --background: 210 32% 96%; /* Light cream background */
+  --foreground: 214 42% 16%; /* Deep navy text */
+  --muted: 214 25% 90%; /* Light blue-gray */
+  --muted-foreground: 214 25% 45%; /* Medium blue-gray */
   --popover: 0 0% 100%; /* Pure white */
-  --popover-foreground: 0 0% 18%; /* Dark text */
+  --popover-foreground: 214 42% 16%; /* Deep navy */
   --card: 0 0% 100%; /* Pure white cards */
-  --card-foreground: 0 0% 18%; /* Dark text */
-  --border: 214 32% 78%; /* Stronger border for better contrast */
-  --input: 214 32% 91%; /* Input background */
-  --primary: 228 70% 63%; /* #5C7AEA - Soft Indigo */
-  --primary-foreground: 0 0% 100%; /* White text on primary */
-  --secondary: 210 40% 96%; /* Light secondary */
-  --secondary-foreground: 0 0% 18%; /* Dark text */
-  --accent: 206 100% 82%; /* #A3D5FF - Sky Blue Tint */
-  --accent-foreground: 0 0% 18%; /* Dark text */
+  --card-foreground: 214 42% 16%; /* Deep navy */
+  --border: 214 25% 78%; /* Stronger border for better contrast */
+  --input: 214 25% 88%; /* Input background */
+  --primary: 214 42% 24%; /* Northstar navy blue */
+  --primary-foreground: 210 32% 96%; /* Light cream */
+  --secondary: 214 25% 85%; /* Light blue-gray */
+  --secondary-foreground: 214 42% 16%; /* Deep navy */
+  --accent: 45 96% 89%; /* Warm cream accent */
+  --accent-foreground: 214 42% 16%; /* Deep navy */
   --destructive: 0 84% 60%; /* Error red */
   --destructive-foreground: 0 0% 100%; /* White */
-  --success: 142 76% 36%; /* Success green */
-  --success-foreground: 0 0% 100%; /* White */
-  --ring: 228 70% 63%; /* Soft Indigo ring */
+  --success: 142 76% 36%; /* Modern green */
+  --success-foreground: 210 32% 96%; /* Light cream */
+  --ring: 214 42% 24%; /* Northstar navy */
   --radius: 0.75rem;
 }
 
 .dark {
-  --background: 220 26% 14%; /* Dark background for wellness theme */
-  --foreground: 210 11% 96%; /* Light text */
-  --muted: 220 20% 22%; /* Dark muted background */
-  --muted-foreground: 215 16% 65%; /* Medium gray text */
-  --popover: 220 20% 18%; /* Dark popover */
-  --popover-foreground: 210 11% 96%; /* Light text */
-  --card: 220 20% 18%; /* Dark card background */
-  --card-foreground: 210 11% 96%; /* Light text */
-  --border: 220 20% 28%; /* Dark border */
-  --input: 220 20% 28%; /* Dark input background */
-  --primary: 228 70% 68%; /* Slightly lighter soft indigo for dark mode */
-  --primary-foreground: 220 26% 14%; /* Dark text on primary */
-  --secondary: 220 20% 28%; /* Dark secondary */
-  --secondary-foreground: 210 11% 96%; /* Light text */
-  --accent: 206 80% 70%; /* Adjusted sky blue for dark mode */
-  --accent-foreground: 220 26% 14%; /* Dark text on accent */
+  --background: 214 42% 16%; /* Deep navy background */
+  --foreground: 210 32% 96%; /* Light cream text */
+  --muted: 214 35% 25%; /* Dark blue-gray */
+  --muted-foreground: 214 25% 65%; /* Medium blue-gray */
+  --popover: 214 38% 20%; /* Slightly lighter navy */
+  --popover-foreground: 210 32% 96%; /* Light cream */
+  --card: 214 38% 20%; /* Card background */
+  --card-foreground: 210 32% 96%; /* Light cream */
+  --border: 214 35% 28%; /* Border in dark mode */
+  --input: 214 35% 28%; /* Input background */
+  --primary: 45 96% 89%; /* Cream primary in dark mode */
+  --primary-foreground: 214 42% 16%; /* Deep navy */
+  --secondary: 214 35% 28%; /* Secondary background */
+  --secondary-foreground: 210 32% 96%; /* Light cream */
+  --accent: 214 42% 24%; /* Navy accent */
+  --accent-foreground: 210 32% 96%; /* Light cream */
   --destructive: 0 62% 50%; /* Darker red for dark mode */
-  --destructive-foreground: 210 11% 96%; /* Light text */
-  --success: 142 76% 36%; /* Success green */
-  --success-foreground: 210 11% 96%; /* Light text */
-  --ring: 228 70% 68%; /* Soft indigo ring */
+  --destructive-foreground: 210 32% 96%; /* Light cream */
+  --success: 142 76% 36%; /* Green stays same */
+  --success-foreground: 210 32% 96%; /* Light cream */
+  --ring: 45 96% 89%; /* Cream ring */
 }
 
 @layer base {
