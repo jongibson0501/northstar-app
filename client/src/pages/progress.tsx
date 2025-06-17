@@ -33,6 +33,12 @@ export default function ProgressPage() {
     setActiveTab("goals");
   };
 
+  const handleMilestoneClick = (milestone: any) => {
+    if (!milestone.isCompleted) {
+      setActiveTab("activities");
+    }
+  };
+
   const updateMilestoneMutation = useMutation({
     mutationFn: async ({ milestoneId, isCompleted }: { milestoneId: number; isCompleted: boolean }) => {
       const response = await apiRequest("PUT", `/api/milestones/${milestoneId}`, {
@@ -273,7 +279,11 @@ export default function ProgressPage() {
                   <div className="space-y-3">
                     <h3 className="text-lg font-medium text-gray-800">Milestones</h3>
                     {selectedGoal.milestones.map((milestone) => (
-                      <Card key={milestone.id}>
+                      <Card 
+                        key={milestone.id}
+                        className={!milestone.isCompleted ? "cursor-pointer hover:shadow-md transition-shadow" : ""}
+                        onClick={() => handleMilestoneClick(milestone)}
+                      >
                         <CardContent className="p-3">
                           <div className="flex items-start gap-3">
                             <Checkbox
@@ -285,6 +295,7 @@ export default function ProgressPage() {
                                 });
                               }}
                               disabled={updateMilestoneMutation.isPending}
+                              onClick={(e) => e.stopPropagation()}
                             />
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
@@ -294,6 +305,9 @@ export default function ProgressPage() {
                                 <p className={`text-sm font-medium ${milestone.isCompleted ? 'text-gray-500 line-through' : 'text-gray-800'}`}>
                                   {milestone.title}
                                 </p>
+                                {!milestone.isCompleted && (
+                                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                                )}
                               </div>
                               <p className="text-xs text-gray-500 mt-1">
                                 {milestone.actions.filter(a => a.isCompleted).length} of {milestone.actions.length} activities completed
