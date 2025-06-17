@@ -43,6 +43,7 @@ function Router() {
               <Route path="/goals/:id" component={Roadmap} />
               <Route path="/progress" component={ProgressPage} />
               <Route path="/daily-checkin" component={DailyCheckIn} />
+              <Route path="/journal" component={JournalReview} />
               <Route path="/subscription" component={Subscription} />
               <Route component={NotFound} />
             </Switch>

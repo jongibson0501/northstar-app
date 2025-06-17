@@ -1,4 +1,4 @@
-import { Home, TrendingUp, Sun } from "lucide-react";
+import { Home, TrendingUp, Sun, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
@@ -25,6 +25,7 @@ export default function Navigation() {
       path: "/daily-checkin",
       needsAttention 
     },
+    { icon: BookOpen, label: "Journal", path: "/journal" },
   ];
 
   return (

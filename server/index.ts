@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { config } from "dotenv";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { notificationScheduler } from "./notifications";
 
 // Load environment variables from .env file
 config();
@@ -42,6 +43,10 @@ app.use((req, res, next) => {
 
 (async () => {
   const server = await registerRoutes(app);
+
+  // Initialize notification scheduler for timezone-aware 10am and 8pm reminders
+  notificationScheduler.scheduleNotifications();
+  log("notification scheduler initialized for daily reminders");
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
