@@ -12,7 +12,7 @@
   --popover-foreground: 0 0% 18%; /* Dark text */
   --card: 0 0% 100%; /* Pure white cards */
   --card-foreground: 0 0% 18%; /* Dark text */
-  --border: 214 32% 91%; /* Subtle border */
+  --border: 214 32% 78%; /* Stronger border for better contrast */
   --input: 214 32% 91%; /* Input background */
   --primary: 228 70% 63%; /* #5C7AEA - Soft Indigo */
   --primary-foreground: 0 0% 100%; /* White text on primary */
@@ -77,6 +77,34 @@
 
 .star-glow {
   animation: star-glow 4s ease-in-out infinite;
+}
+
+/* Enhanced contrast for better visual definition */
+@layer components {
+  /* Stronger borders for cards and white elements */
+  .card {
+    @apply border-2 border-slate-300 dark:border-slate-600;
+  }
+  
+  /* Enhanced button contrast */
+  .bg-primary {
+    @apply border-2 border-slate-400 dark:border-slate-500;
+  }
+  
+  /* Stronger input field borders */
+  input, textarea, select {
+    @apply border-2 border-slate-300 dark:border-slate-600;
+  }
+  
+  /* White background elements get stronger borders */
+  .bg-white, .bg-card {
+    @apply border-2 border-slate-300 dark:border-slate-600;
+  }
+  
+  /* Progress indicators and status elements */
+  .bg-accent {
+    @apply border border-slate-400 dark:border-slate-500;
+  }
 }
 
 /* Custom gradient backgrounds */
