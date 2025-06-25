@@ -10,6 +10,8 @@ A mobile-first goal management application that transforms abstract objectives i
 - **Progress Tracking** - Visual progress indicators and goal completion analytics
 - **Journal Integration** - Daily reflections tied to goal progress
 - **Subscription Management** - Stripe integration for premium features
+- **Mobile-Responsive Design** - Optimized for both desktop and mobile devices
+- **Celebration Animations** - Rewarding visual feedback for completed goals and streaks
 
 ## Tech Stack
 
